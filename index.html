@@ -93,6 +93,12 @@ textarea.f{min-height:300px;line-height:1.6}
 .cpt{margin-inline-start:auto;background:var(--hl);color:var(--ch);border-radius:6px;padding:1px 8px;font-size:.78rem}
 .cpt:empty{display:none}
 .mn.dn{bottom:auto;top:calc(100% + 6px)}
+.fab{position:fixed;left:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;border:0;background:var(--ch);color:var(--bg);box-shadow:0 6px 18px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:8}
+.fab svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round}
+.fab:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+.hrt{color:var(--mut)}.hrt.on{color:#e11d48;border-color:#e11d48}
+.hrt.on svg{fill:currentColor}
+.card .hrt{border:0;background:none;padding:6px}
 .mn.le{inset-inline-start:auto;inset-inline-end:0}
 .sp{flex:1}
 .mrow{display:flex;align-items:center;gap:8px;direction:ltr;padding:4px}
@@ -141,8 +147,9 @@ textarea.f{min-height:300px;line-height:1.6}
 <body>
 <div id="app"></div>
 <script>
-let galSong=null,incoming=null,S=[],v='list',cur=null,tab='l',pk=null,t=0,fs=22,sp=3,timer=null,tbc=false,pv='',ins='g',onChord=null,closeP=null;
+let favOnly=false,galSong=null,incoming=null,S=[],v='list',cur=null,tab='l',pk=null,t=0,fs=22,sp=3,timer=null,tbc=false,pv='',ins='g',onChord=null,closeP=null;
 try{S=JSON.parse(localStorage.getItem('chords_songs')||'[]')}catch(e){}
+try{favOnly=localStorage.getItem('chords_fav')==='1'}catch(e){}
 try{const l0=localStorage.getItem('chords_ins');ins=l0==='p'||l0==='u'?l0:'g'}catch(e){}
 const sv=()=>{try{localStorage.setItem('chords_songs',JSON.stringify(S))}catch(e){}};
 const A=document.getElementById('app');
@@ -341,17 +348,27 @@ function sync(){
   cur.lines=out;cur.raw=null;
 }
 
+const heartBtn=(s,cls)=>{const b=ibt('heart',e=>{e.stopPropagation();s.fav=!s.fav||undefined;s.upd=Date.now();sv();upd()},cls);
+  const upd=()=>{b.classList.toggle('on',!!s.fav);b.setAttribute('aria-label',s.fav?'הסר מהמועדפים':'הוסף למועדפים');b.setAttribute('aria-pressed',s.fav?'true':'false')};upd();return b};
 function list(){
-  const top=el('div','bar');
-  top.append(el('b','tt','ספר האקורדים שלי'),btn('שיר חדש',()=>{
-    cur={id:Date.now(),title:'',artist:'',link:'',dir:'rtl',lines:[],raw:''};v='ed';tab='l';pk=null;render()},'b pr'),ibt('film',()=>{galSong=null;v='gal';render()},'b ic','הסרטונים שלי'),ibt('gear',()=>{v='set';render()},'b ic','הגדרות'));
-  A.append(top);
-  if(!S.length)A.append(el('div','em','אין עדיין שירים. לחץ על "שיר חדש", הדבק מילים והוסף אקורדים.'));
-  [...S].sort((a,b)=>a.title.localeCompare(b.title,'he')).forEach(s=>{
+  const hdr=el('div','hdr'),icr=el('div','icr');
+  const fb=ibt('heart',()=>{favOnly=!favOnly;try{localStorage.setItem('chords_fav',favOnly?'1':'0')}catch(e){}render()},'b ic hrt'+(favOnly?' on':''),favOnly?'הצג את כל השירים':'הצג רק מועדפים');
+  fb.setAttribute('aria-pressed',favOnly?'true':'false');
+  icr.append(fb,ibt('film',()=>{galSong=null;v='gal';render()},'b ic','הסרטונים שלי'),ibt('gear',()=>{v='set';render()},'b ic','הגדרות'));
+  hdr.append(icr,el('h1','sti','ספר האקורדים שלי'));
+  A.append(hdr);
+  const fab=ibt('plus',()=>{cur={id:Date.now(),title:'',artist:'',link:'',dir:'rtl',lines:[],raw:''};v='ed';tab='l';pk=null;render()},'fab','שיר חדש');
+  A.append(fab);
+  const list2=S.filter(s=>!favOnly||s.fav);
+  if(!S.length)A.append(el('div','em','אין עדיין שירים. לחץ על + כדי להוסיף שיר.'));
+  else if(!list2.length)A.append(el('div','em','עוד אין מועדפים. לחץ על הלב ליד שיר כדי להוסיף.'));
+  list2.sort((a,b)=>a.title.localeCompare(b.title,'he')).forEach(s=>{
     const c=el('div','card'),n=el('div','n');
     n.append(el('div','',s.title),el('small','',s.artist||''));
     const d=btn('מחק',e=>{e.stopPropagation();if(d.dataset.a){S=S.filter(x=>x.id!==s.id);sv();render()}else{d.dataset.a=1;d.textContent='בטוח?'}});
-    c.append(n,d);c.onclick=()=>{cur=s;t=s.tp||0;v='vw';render()};A.append(c);
+    const hb=heartBtn(s,'b ic hrt');
+    if(favOnly){const o=hb.onclick;hb.onclick=e=>{o(e);if(!s.fav)render()}}
+    c.append(n,hb,d);c.onclick=()=>{cur=s;t=s.tp||0;v='vw';render()};A.append(c);
   });
 }
 
@@ -377,7 +394,7 @@ function view(){
       if(r==='fail')toast('לא הצלחתי ליצור את הקובץ כאן')};
     sm.append(lk,fb);
     if(inArtifact)sm.append(el('div','mh','שיתוף בקישור יעבוד אחרי המעבר לאחסון משלך'));
-    sd.append(sb,sm);icr.append(sd);
+    sd.append(sb,sm);icr.append(sd,heartBtn(s,'b ic hrt'));
   }
   icr.append(el('span','sp'));
   mBpm=s.bpm||mBpm||100;
@@ -479,6 +496,8 @@ const IB={
  cam:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6.5" width="13" height="11" rx="2"/><path d="M15.5 10.5l6-3.5v10l-6-3.5z"/></svg>',
  film:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/><path d="M10.5 9.5v5l4-2.5z" fill="currentColor" stroke="none"/></svg>',
  save:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>',
+ heart:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.2-9.4C1.6 7.6 4 4.5 7.3 4.5c2 0 3.4 1.1 4.7 2.8 1.3-1.7 2.7-2.8 4.7-2.8 3.3 0 5.7 3.1 4.5 6.6-1.7 4.8-9.2 9.4-9.2 9.4z"/></svg>',
+ plus:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
  share:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>',
  back:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
  ok:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-width="2.4"/></svg>',
@@ -768,7 +787,7 @@ function render(){
   if(closeP)closeP(false);onChord=null;closeP=null;
   metroStop();updCamBtn=()=>{};if(cam&&!(v==='vw'&&cur&&cur.id===cam.songId))camClose();
   const k=v+tab+(cur&&cur.id),y=k===pv?scrollY:0;pv=k;
-  A.textContent='';({list,vw:view,ed:edit,set:settings,gal:gallery})[v]();scrollTo(0,y);
+  A.textContent='';({list,vw:view,ed:edit,set:settings,gal:gallery})[v]();scrollTo(0,y);syncHist();
   if(v==='ed'&&tab==='c'&&pk){const e=A.querySelector('.cl.sel,.cc.on');
     if(e){const r=e.getBoundingClientRect(),lim=innerHeight-290;if(r.bottom>lim)scrollBy(0,r.bottom-lim+16);else if(r.top<90)scrollBy(0,r.top-110)}}
 }
@@ -787,6 +806,34 @@ document.addEventListener('touchcancel',()=>{if(pinch){pinch=null;zoomTo(fs,true
 document.addEventListener('gesturestart',e=>{if(v==='vw')e.preventDefault()});
 document.addEventListener('gesturechange',e=>{if(v==='vw')e.preventDefault()});
 document.addEventListener('wheel',e=>{if(v==='vw'&&e.ctrlKey){e.preventDefault();zoomTo(fs*Math.exp(-e.deltaY*.01));clearTimeout(wt);wt=setTimeout(()=>zoomTo(fs,true),150)}},{passive:false});
+/* phone back button */
+let armed=false,ignorePop=false,edSnap=null,edObj=null;
+const edState=()=>{const c=cur;return JSON.stringify({a:[c.title,c.artist,c.link,c.cp,c.priv,c.dir],t:c.raw!=null?c.raw:c.lines.filter(l=>l.ty!=='c').map(l=>l.t).join('\n'),c:c.lines.map(l=>l.ty==='c'?[l.x,l.lab]:l.c)})};
+function syncHist(){
+  if(v==='ed'&&edObj!==cur){edObj=cur;edSnap=edState()}
+  if(v!=='ed')edObj=null;
+  if(v!=='list'&&!armed){try{history.pushState({chords:1},'');armed=true}catch(e){}}
+  else if(v==='list'&&armed){armed=false;ignorePop=true;history.back()}
+}
+function closeOverlay(){
+  const mv=document.querySelector('.vmod');if(mv){const b=mv.querySelector('button');b?b.click():mv.remove();return true}
+  if(closeP){closeP(true);return true}
+  const m=[...document.querySelectorAll('.mn')].find(x=>!x.hidden);if(m){m.hidden=true;if(m._done)m._done();return true}
+  if(v==='ed'&&pk){pk=null;render();return true}
+  return false;
+}
+addEventListener('popstate',()=>{
+  if(ignorePop){ignorePop=false;return}
+  armed=false;
+  if(closeOverlay()){syncHist();return}
+  if(v==='ed'){
+    if(edObj&&edState()!==edSnap&&!confirm('לצאת בלי לשמור?')){syncHist();return}
+    const ex=S.find(x=>x.id===cur.id);if(ex){cur=ex;t=ex.tp||0;v='vw'}else v='list';
+  }else if(v==='vw'){stop();if(cur===incoming){incoming=null}cur=null;v='list'}
+  else if(v==='gal'){const sg=galSong!=null?S.find(x=>x.id===galSong):null;galSong=null;if(sg){cur=sg;t=sg.tp||0;v='vw'}else v='list'}
+  else v='list';
+  render();
+});
 render();
 (async()=>{try{const sh=await readLink();if(sh){incoming=sh;cur=sh;t=0;v='vw';try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}render()}}catch(e){}})();
 </script>
