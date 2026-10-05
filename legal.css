@@ -1,0 +1,6 @@
+:root{--bg:#f3f5f8;--fg:#111c27;--mut:#66727f;--ch:#3730a3}
+@media (prefers-color-scheme:dark){:root{--bg:#10141b;--fg:#e8edf3;--mut:#93a0ad;--ch:#7dd3fc}}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Segoe UI",Arial,"Noto Sans Hebrew",sans-serif;line-height:1.65}
+main{max-width:680px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:1.6rem;margin:0 0 4px}h2{font-size:1.1rem;margin:26px 0 6px}
+.d{color:var(--mut);font-size:.9rem;margin:0 0 20px}a{color:var(--ch)}ul{padding-inline-start:1.3em}
