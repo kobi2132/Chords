@@ -107,7 +107,7 @@ textarea.f{min-height:300px;line-height:1.6}
 .recb{width:38px;height:38px;border-radius:50%;border:3px solid var(--fg);background:#dc2626;padding:0;cursor:pointer}
 .recb.on{border-radius:10px;width:34px;height:34px;margin:2px}
 .ctm{font-size:.8rem;color:#dc2626;font-variant-numeric:tabular-nums;min-width:2.6em;text-align:center}
-.csv{width:100%;margin-top:4px;font-size:.8rem;padding:6px 4px}
+.csv{width:100%;margin-top:4px;padding:6px 4px}
 .vgh{font-size:1rem;margin:18px 0 6px}
 .vit{display:flex;align-items:center;gap:8px;background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin:6px 0}
 .vit .n{flex:1;font-size:.9rem}.vit small{display:block;color:var(--mut)}
@@ -478,6 +478,7 @@ const IB={
  metro:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l4 18H5L9 3z"/><path d="M7 15h10M12 15l5-9"/></svg>',
  cam:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6.5" width="13" height="11" rx="2"/><path d="M15.5 10.5l6-3.5v10l-6-3.5z"/></svg>',
  film:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/><path d="M10.5 9.5v5l4-2.5z" fill="currentColor" stroke="none"/></svg>',
+ save:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>',
  share:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>',
  back:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
  ok:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-width="2.4"/></svg>',
@@ -548,7 +549,7 @@ async function camOpen(s){
   rb.setAttribute('aria-label','התחל הקלטה');
   bar.append(xb,tm,rb);box.append(vd,bar);document.body.append(box);
   cam={st,box,rec:null,songId:s.id,title:s.title,last:null,tm};
-  const sv2=btn('שמור לטלפון',()=>cam&&cam.last&&saveVideo(cam.last),'b csv');sv2.hidden=true;box.append(sv2);cam.sv=sv2;
+  const sv2=ibt('save',()=>cam&&cam.last&&saveVideo(cam.last),'b ic csv','שמור לטלפון');sv2.hidden=true;box.append(sv2);cam.sv=sv2;
   rb.onclick=()=>{if(!cam)return;cam.rec?recStop():recStart(rb)};
   let dx=0,dy=0,drag=false;
   vd.onpointerdown=e=>{drag=true;const r=box.getBoundingClientRect();dx=e.clientX-r.left;dy=e.clientY-r.top;try{vd.setPointerCapture(e.pointerId)}catch(_){}};
@@ -626,7 +627,8 @@ function gallery(){
         const pl=btn('',()=>playVideo(o),'b ic','נגן');pl.innerHTML=IB.play;
         const dl=btn('',e=>{if(dl.dataset.a){vDel(o.id).then(()=>render())}else{dl.dataset.a=1;dl.innerHTML='';dl.textContent='בטוח?'}},'b ic','מחק סרטון');dl.innerHTML=TRI;
         const shb=btn('',()=>shareVideo(o),'b ic','שתף סרטון');shb.innerHTML=IB.share;
-        it.append(pl,n,btn('שמור לטלפון',()=>saveVideo(o),'b'),shb,dl);body.append(it);
+        const svb=ibt('save',()=>saveVideo(o),'b ic','שמור לטלפון');
+        it.append(pl,n,svb,shb,dl);body.append(it);
       });
     });
   }).catch(()=>{body.textContent='';body.append(el('div','em','לא הצלחתי לפתוח את הגלריה בדפדפן הזה.'))});
