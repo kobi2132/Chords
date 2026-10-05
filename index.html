@@ -364,7 +364,7 @@ function view(){
     icr.append(ibt('edit',()=>{stop();cur=JSON.parse(JSON.stringify(s));v='ed';tab='c';pk=null;render()},'b ic','עריכה'));
     const sd=el('div','dd'),sm=el('div','mn dn'),sb=ibt('share',()=>{
       sm.hidden=!sm.hidden;
-      if(!sm.hidden){const off=e=>{if(!sd.contains(e.target)){sm.hidden=true;document.removeEventListener('pointerdown',off,true)}};document.addEventListener('pointerdown',off,true)}},'b ic','שתף שיר');
+      if(!sm.hidden){watchMenu(sd,sm)}},'b ic','שתף שיר');
     sm.hidden=true;
     const lk=el('button','mi','שתף קישור');
     if(inArtifact){lk.disabled=true}
@@ -382,9 +382,9 @@ function view(){
   icr.append(el('span','sp'));
   mBpm=s.bpm||mBpm||100;
   const md=el('div','dd'),mm=el('div','mn dn le'),mb=ibt('metro',()=>{
-    if(mOn){metroStop();updM();return}
+    if(mOn){metroStop();mm.hidden=true;updM();return}
     mm.hidden=!mm.hidden;
-    if(!mm.hidden){const off=e=>{if(!md.contains(e.target)){mm.hidden=true;document.removeEventListener('pointerdown',off,true)}};document.addEventListener('pointerdown',off,true)}},'b ic','מטרונום');
+    if(!mm.hidden){watchMenu(md,mm)}},'b ic','מטרונום');
   mm.hidden=true;
   const bv=el('div','bpm'),setB=n=>{mBpm=Math.min(250,Math.max(30,n));bv.innerHTML='';bv.append(String(mBpm),el('small','','BPM'));if(!inc){s.bpm=mBpm;s.upd=Date.now();sv()}};
   bv.append(String(mBpm),el('small','','BPM'));
@@ -394,9 +394,9 @@ function view(){
     b.onpointerup=b.onpointerleave=b.onpointercancel=end;
     b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();setB(mBpm+d)}};return b};
   const mr=el('div','mrow');mr.append(hold('−',-1,'האט'),bv,hold('+',1,'האץ'));
-  const go2=btn('',()=>{mm.hidden=true;metroStart();updM()},'b pr ic mgo','הפעל מטרונום');go2.innerHTML=IB.play;
+  const go2=btn('',()=>{mOn?metroStop():metroStart();updM()},'b pr ic mgo','הפעל מטרונום');
   mm.append(mr,go2);md.append(mb,mm);
-  const updM=()=>{mb.innerHTML=mOn?IB.pause:IB.metro;mb.setAttribute('aria-label',mOn?'עצור מטרונום':'מטרונום')};
+  const updM=()=>{mb.innerHTML=mOn?IB.pause:IB.metro;mb.setAttribute('aria-label',mOn?'עצור מטרונום':'מטרונום');go2.innerHTML=mOn?IB.pause:IB.play;go2.setAttribute('aria-label',mOn?'עצור מטרונום':'הפעל מטרונום')};
   mBeatCb=()=>{mb.classList.add('beat');setTimeout(()=>mb.classList.remove('beat'),90)};
   updM();icr.append(md);
   if(!inc){
@@ -404,7 +404,7 @@ function view(){
       if(cam&&cam.songId===s.id){camClose();return}
       cm.hidden=!cm.hidden;
       if(!cm.hidden){vAll().then(a=>{vb.textContent='הסרטונים של השיר ('+a.filter(x=>x.songId===s.id).length+')'}).catch(()=>{});
-        const off=e=>{if(!cd.contains(e.target)){cm.hidden=true;document.removeEventListener('pointerdown',off,true)}};document.addEventListener('pointerdown',off,true)}},'b ic','מצלמה');
+        watchMenu(cd,cm)}},'b ic','מצלמה');
     cm.hidden=true;
     const cs3=el('button','mi','צלם את עצמך');cs3.onclick=()=>{cm.hidden=true;camOpen(s)};
     const vb=el('button','mi','הסרטונים של השיר');vb.onclick=()=>{cm.hidden=true;galSong=s.id;v='gal';render()};
@@ -423,7 +423,7 @@ function view(){
   const draw=()=>{bd.textContent='';bd.style.fontSize=fs+'px';s.lines.forEach((l,i)=>bd.append(rl(l,s.dir,false,i)));fix(bd)};
   const dd=el('div','dd'),mn=el('div','mn'),ibn=btn('',()=>{
     mn.hidden=!mn.hidden;
-    if(!mn.hidden){const off=e=>{if(!dd.contains(e.target)){mn.hidden=true;document.removeEventListener('pointerdown',off,true)}};document.addEventListener('pointerdown',off,true)}},'b ic sq');
+    if(!mn.hidden){watchMenu(dd,mn)}},'b ic sq');
   mn.hidden=true;
   ['p','g','u'].forEach(k=>{const b=el('button','mi');b.innerHTML=IC[k]+'<span>'+NM[k]+'</span>';b.setAttribute('aria-label',NM[k]);
     b.onclick=()=>{ins=k;try{localStorage.setItem('chords_ins',ins)}catch(e){}mn.hidden=true;ui();draw()};mn.append(b)});
@@ -490,6 +490,15 @@ const toast=(m,ms)=>{const e=el('div','toast',m);document.body.append(e);setTime
 const isIOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const aSess=t=>{try{if(navigator.audioSession)navigator.audioSession.type=t}catch(e){}};
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+function watchMenu(box,menu){
+  if(menu._done)menu._done();
+  const done=()=>{document.removeEventListener('click',off,true);document.removeEventListener('keydown',esc,true);menu._done=null};
+  const off=e=>{if(menu.hidden||!document.contains(menu)){done();return}
+    if(box.contains(e.target))return;
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();menu.hidden=true;done()};
+  const esc=e=>{if(e.key==='Escape'){menu.hidden=true;done()}};
+  menu._done=done;document.addEventListener('click',off,true);document.addEventListener('keydown',esc,true);
+}
 /* metronome */
 let mAC=null,mOn=false,mNext=0,mTimer=null,mBpm=100,mBeatCb=null,mHint=false;
 function mClick(at){const o=mAC.createOscillator(),g=mAC.createGain();o.frequency.value=1500;g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(.7,at+.002);g.gain.exponentialRampToValueAtTime(.0001,at+.05);o.connect(g).connect(mAC.destination);o.start(at);o.stop(at+.06)}
@@ -512,9 +521,14 @@ const fname=s=>(s||'שיר').replace(/[\\/:*?"<>|]/g,'').trim().slice(0,60)||'ש
 function saveVideo(o){
   const ext=/mp4/.test(o.type)?'mp4':'webm',d=new Date(o.date),p2=n=>String(n).padStart(2,'0');
   const name=fname(o.title)+'-'+d.getFullYear()+p2(d.getMonth()+1)+p2(d.getDate())+'-'+p2(d.getHours())+p2(d.getMinutes())+'.'+ext;
-  const f=new File([o.blob],name,{type:o.type});
-  if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f]}).catch(e=>{if(!e||e.name!=='AbortError')dlBlob(o.blob,name)});return}
-  dlBlob(o.blob,name);
+  if(isIOS){const f=new File([o.blob],name,{type:o.type});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f]}).catch(e=>{if(!e||e.name!=='AbortError')dlBlob(o.blob,name)});return}}
+  dlBlob(o.blob,name);toast('הסרטון ירד לתיקיית ההורדות',3000);
+}
+function shareVideo(o){
+  const ext=/mp4/.test(o.type)?'mp4':'webm',f=new File([o.blob],fname(o.title)+'.'+ext,{type:o.type});
+  if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f]}).catch(()=>{});
+  else toast('הדפדפן הזה לא תומך בשיתוף סרטונים');
 }
 function dlBlob(b,name){const a=el('a'),u=URL.createObjectURL(b);a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)}
 function playVideo(o){const m=el('div','vmod'),vd=el('video'),u=URL.createObjectURL(o.blob);vd.src=u;vd.controls=true;vd.playsInline=true;vd.autoplay=true;
@@ -611,7 +625,8 @@ function gallery(){
         n.append(el('div','',fmtD(o.date)),el('small','',fmtT(o.dur||0)+' · '+((o.size||0)/1048576).toFixed(1)+' מ"ב'));
         const pl=btn('',()=>playVideo(o),'b ic','נגן');pl.innerHTML=IB.play;
         const dl=btn('',e=>{if(dl.dataset.a){vDel(o.id).then(()=>render())}else{dl.dataset.a=1;dl.innerHTML='';dl.textContent='בטוח?'}},'b ic','מחק סרטון');dl.innerHTML=TRI;
-        it.append(pl,n,btn('שמור לטלפון',()=>saveVideo(o),'b'),dl);body.append(it);
+        const shb=btn('',()=>shareVideo(o),'b ic','שתף סרטון');shb.innerHTML=IB.share;
+        it.append(pl,n,btn('שמור לטלפון',()=>saveVideo(o),'b'),shb,dl);body.append(it);
       });
     });
   }).catch(()=>{body.textContent='';body.append(el('div','em','לא הצלחתי לפתוח את הגלריה בדפדפן הזה.'))});
