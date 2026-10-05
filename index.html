@@ -102,7 +102,15 @@ html{overflow-x:clip}
 .mn.dn{bottom:auto;top:calc(100% + 6px)}
 .wel{max-width:420px;margin:0 auto;padding:48px 4px 40px;text-align:center}
 .wel h1{font-size:1.8rem;margin:0 0 8px}.wel .tag{color:var(--mut);margin:0 0 28px}
-.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:13px;font-size:1.05rem}
+.gbtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 22px;border-radius:999px;background:var(--cd);color:var(--fg);border:1px solid var(--bd);font-size:1rem;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.gbtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+.gbtn:focus-visible{outline:2px solid var(--ch);outline-offset:2px}
+.wide{display:block;width:100%;padding:12px;font-size:1rem;margin-top:14px}
+.insr{display:flex;gap:8px;margin:6px 0 4px}
+.insb{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;font-size:.85rem}
+.insb svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.lbl{display:block;text-align:start;font-size:.9rem;margin:14px 0 2px}
+.hello{color:var(--mut);margin:2px 0 12px;font-size:.95rem}
 .legal{font-size:.8rem;color:var(--mut);margin:10px 0 26px}.legal a{color:var(--ch)}
 .skip{background:none;border:0;color:var(--fg);text-decoration:underline;cursor:pointer;font-size:.95rem;padding:8px}
 .lim{text-align:start;font-size:.82rem;color:var(--mut);margin:10px auto 0;padding-inline-start:1.2em;max-width:340px}.lim li{margin:3px 0}
@@ -168,8 +176,14 @@ html{overflow-x:clip}
 <script>
 let favOnly=false,galSong=null,incoming=null,S=[],v='list',cur=null,tab='l',pk=null,t=0,fs=22,sp=3,timer=null,tbc=false,pv='',ins='g',onChord=null,closeP=null;
 try{S=JSON.parse(localStorage.getItem('chords_songs')||'[]')}catch(e){}
+let prefIns='g',pupd=0,gname='';
 try{favOnly=localStorage.getItem('chords_fav')==='1'}catch(e){}
-try{const l0=localStorage.getItem('chords_ins');ins=l0==='p'||l0==='u'?l0:'g'}catch(e){}
+try{const l0=localStorage.getItem('chords_ins');prefIns=l0==='p'||l0==='u'?l0:'g'}catch(e){}
+try{pupd=+localStorage.getItem('chords_pupd')||0;gname=localStorage.getItem('chords_name')||''}catch(e){}
+ins=prefIns;
+const savePrefs=()=>{try{localStorage.setItem('chords_ins',prefIns);localStorage.setItem('chords_fav',favOnly?'1':'0');localStorage.setItem('chords_pupd',String(pupd))}catch(e){}};
+const setPrefs=(o)=>{if(o.ins)prefIns=o.ins;if(o.fav!=null)favOnly=o.fav;pupd=Date.now();savePrefs();markDirty()};
+const myName=()=>acct?(acct.dname||''):gname;
 const sv=()=>{try{localStorage.setItem('chords_songs',JSON.stringify(S))}catch(e){}markDirty()};
 const A=document.getElementById('app');
 const el=(g,c,x)=>{const e=document.createElement(g);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
@@ -371,12 +385,13 @@ const heartBtn=(s,cls)=>{const b=ibt('heart',e=>{e.stopPropagation();s.fav=!s.fa
   const upd=()=>{b.classList.toggle('on',!!s.fav);b.setAttribute('aria-label',s.fav?'הסר מהמועדפים':'הוסף למועדפים');b.setAttribute('aria-pressed',s.fav?'true':'false')};upd();return b};
 function list(){
   const hdr=el('div','hdr'),icr=el('div','icr');
-  const fb=ibt('heart',()=>{favOnly=!favOnly;try{localStorage.setItem('chords_fav',favOnly?'1':'0')}catch(e){}render()},'b ic hrt'+(favOnly?' on':''),favOnly?'הצג את כל השירים':'הצג רק מועדפים');
+  const fb=ibt('heart',()=>{setPrefs({fav:!favOnly});render()},'b ic hrt'+(favOnly?' on':''),favOnly?'הצג את כל השירים':'הצג רק מועדפים');
   fb.setAttribute('aria-pressed',favOnly?'true':'false');
   icr.append(fb,ibt('film',()=>{galSong=null;v='gal';render()},'b ic','הסרטונים שלי'),ibt('gear',()=>{v='set';render()},'b ic','הגדרות'));
   icr.prepend(el('span','sp'));
   if(acct){const cb=ibt('cloud',()=>{if(cloudSt==='need'||cloudSt==='err')signIn(false);else{v='set';render()}},'b ic cld');cb.id='cloudBtn';icr.insertBefore(cb,icr.children[1]||null);paintCloud()}
   hdr.append(icr,el('h1','sti','ספר האקורדים שלי'));
+  if(myName())hdr.append(el('p','hello','שלום, '+myName()));
   let nx=false;try{nx=localStorage.getItem('chords_nudge')==='1'}catch(e){}
   if(!acct&&S.length>=3&&!nx){const nb=el('div','nudge');nb.append(el('span','','השירים שלך שמורים רק במכשיר הזה. התחבר כדי לגבות אותם.'),btn('התחבר',()=>{v='wel';render()},'b pr'),btn('✕',()=>{try{localStorage.setItem('chords_nudge','1')}catch(e){}nb.remove()},'b px','סגור'));hdr.append(nb)}
   A.append(hdr);
@@ -468,7 +483,7 @@ function view(){
     if(!mn.hidden){watchMenu(dd,mn)}},'b ic sq');
   mn.hidden=true;
   ['p','g','u'].forEach(k=>{const b=el('button','mi');b.innerHTML=IC[k]+'<span>'+NM[k]+'</span>';b.setAttribute('aria-label',NM[k]);
-    b.onclick=()=>{ins=k;try{localStorage.setItem('chords_ins',ins)}catch(e){}mn.hidden=true;ui();draw()};mn.append(b)});
+    b.onclick=()=>{ins=k;mn.hidden=true;ui();draw()};mn.append(b)});
   dd.append(ibn,mn);
   const ui=()=>{ibn.innerHTML=IC[ins];ibn.setAttribute('aria-label','כלי נגינה: '+NM[ins]);
     [...mn.children].forEach((b,n)=>b.classList.toggle('on',['p','g','u'][n]===ins));
@@ -713,8 +728,11 @@ async function gfetch(url,opt){opt=opt||{};opt.headers=Object.assign({Authorizat
 async function onFirstLogin(){
   try{const u=await (await gfetch('https://www.googleapis.com/oauth2/v3/userinfo')).json();
     const old=acct&&acct.sub===u.sub?acct:null;
-    acct={sub:u.sub,email:u.email||'',name:u.name||'',dname:(old&&old.dname)||u.given_name||u.name||'',news:old?!!old.news:false};saveAcct();setWel();
-    v='onb';render();syncNow();
+    acct={sub:u.sub,email:u.email||'',name:u.name||'',given:u.given_name||'',dname:old?old.dname:'',news:old?!!old.news:false,upd:old?(old.upd||0):0};saveAcct();setWel();
+    v='load';render();
+    await syncNow();
+    if(acct&&acct.upd>0&&acct.dname){toast('ברוך שובך, '+acct.dname);finishWel()}
+    else{v='onb';render()}
   }catch(e){toast('לא הצלחתי לקרוא את פרטי החשבון');setCloud('err')}
 }
 function mergeRemote(o){
@@ -723,7 +741,8 @@ function mergeRemote(o){
   ((o&&o.songs)||[]).forEach(x=>{if(!okSong(x))return;const i=S.findIndex(y=>String(y.id)===String(x.id));
     if(i<0){S.push(x);ch=true}else if((x.upd||0)>(S[i].upd||0)){S[i]=x;ch=true}});
   const n=S.length;S=S.filter(x=>!(DEL[x.id]!=null&&DEL[x.id]>=(x.upd||0)));if(S.length!==n)ch=true;
-  if(o&&o.acct&&acct&&!acct.dnameSet&&o.acct.dname){acct.dname=o.acct.dname;acct.news=!!o.acct.news;saveAcct()}
+  if(o&&o.acct&&acct&&o.acct.dname&&(o.acct.upd||1)>(acct.upd||0)){acct.dname=o.acct.dname;acct.news=!!o.acct.news;acct.upd=o.acct.upd||1;saveAcct();ch=true}
+  if(o&&o.prefs&&(o.prefs.upd||0)>pupd){if(['p','g','u'].includes(o.prefs.ins)){prefIns=o.prefs.ins;ins=prefIns}favOnly=!!o.prefs.fav;pupd=o.prefs.upd;savePrefs();ch=true}
   return ch;
 }
 async function syncNow(){
@@ -736,7 +755,8 @@ async function syncNow(){
     let id=l.files&&l.files[0]&&l.files[0].id,changed=false;
     if(id){const o=await (await gfetch('https://www.googleapis.com/drive/v3/files/'+id+'?alt=media')).json().catch(()=>null);if(o)changed=mergeRemote(o)}
     if(changed){saveDel();try{localStorage.setItem('chords_songs',JSON.stringify(S))}catch(e){}if(v==='list'||v==='set')render()}
-    const body=JSON.stringify({app:'chords',v:1,date:new Date().toISOString(),acct:{dname:acct.dname,news:!!acct.news},del:DEL,songs:S});
+    if(!acct)return;
+    const body=JSON.stringify({app:'chords',v:1,date:new Date().toISOString(),acct:{dname:acct.dname,news:!!acct.news,upd:acct.upd||0},prefs:{ins:prefIns,fav:favOnly,upd:pupd},del:DEL,songs:S});
     if(id)await gfetch('https://www.googleapis.com/upload/drive/v3/files/'+id+'?uploadType=media',{method:'PATCH',headers:{'Content-Type':'application/json'},body});
     else{const bd='chordsb'+Date.now(),mp='--'+bd+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify({name:'songs.json',parents:['appDataFolder']})+'\r\n--'+bd+'\r\nContent-Type: application/json\r\n\r\n'+body+'\r\n--'+bd+'--';
       await gfetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+bd},body:mp})}
@@ -760,36 +780,56 @@ function welcome(){
   loadGIS().catch(()=>{});
   const w=el('div','wel');
   w.append(el('h1','','ספר האקורדים שלי'),el('p','tag','המילים והאקורדים שלך, במקום אחד, בעברית ובאנגלית.'));
-  const g=btn('',()=>signIn(true),'b pr gbtn');g.innerHTML=IB.cloud;g.append('התחבר עם Google');
+  const g=btn('',()=>signIn(true),'gbtn');g.innerHTML=IB.cloud;g.append('התחבר עם Google');
   w.append(g,legal());
-  w.append(btn('המשך ללא התחברות',()=>finishWel(),'skip'));
+  w.append(btn('המשך ללא התחברות',()=>{setWel();v='onb';render()},'skip'));
   const ul=el('ul','lim');
   ['השירים יישמרו רק במכשיר ובדפדפן הזה.','הם עלולים להימחק אם מנקים את נתוני הדפדפן (וב-iPhone גם אחרי תקופה בלי שימוש).','אין סנכרון בין מכשירים.','לא ניתן יהיה לפרסם שירים בקהילה (בעתיד).'].forEach(x=>ul.append(el('li','',x)));
   w.append(ul,el('p','legal','תמיד אפשר להתחבר בהמשך מההגדרות.'));
   A.append(w);
 }
+function insPicker(cur0,onPick){
+  const r=el('div','insr');
+  ['p','g','u'].forEach(k=>{const b=btn('',()=>{onPick(k);[...r.children].forEach((x,n)=>x.classList.toggle('on',['p','g','u'][n]===k))},'b insb'+(cur0===k?' on':''),NM[k]);b.innerHTML=IC[k];b.append(NM[k]);r.append(b)});
+  return r;
+}
+function loading(){const w=el('div','wel');w.append(el('h1','','רגע...'),el('p','tag','טוען את הנתונים שלך מ-Google Drive'));A.append(w)}
 function onboard(){
   const w=el('div','wel');
-  w.append(el('h1','','ברוך הבא'),el('p','tag','מחובר כ-'+(acct?acct.email:'')));
-  const lb=el('label','chk');lb.style.display='block';lb.append('שם תצוגה (יופיע ליד שירים שתפרסם בעתיד)');
-  const nm=el('input','f');nm.value=acct?acct.dname:'';nm.maxLength=40;lb.append(nm);
-  const ck=el('label','chk'),cb=el('input');cb.type='checkbox';cb.checked=!!(acct&&acct.news);ck.append(cb,el('span','','אשמח לקבל במייל עדכונים על האפליקציה'));
-  w.append(lb,ck,btn('המשך',()=>{if(acct){acct.dname=nm.value.trim().slice(0,40)||acct.dname;acct.news=cb.checked;acct.dnameSet=true;saveAcct();markDirty()}finishWel()},'b pr gbtn'));
+  w.append(el('h1','','ברוך הבא'));
+  if(acct)w.append(el('p','tag','מחובר כ-'+acct.email));
+  const l1=el('label','lbl','שם תצוגה');const nm=el('input','f');nm.maxLength=40;
+  nm.value=acct?(acct.dname||gname||acct.given||acct.name||''):gname;
+  w.append(l1,nm);
+  let sel=prefIns;
+  w.append(el('div','lbl','באיזה כלי אתה מנגן?'),insPicker(sel,k=>{sel=k}),el('p','legal','אפשר לשנות בהגדרות, ובתוך כל שיר.'));
+  let cb=null;
+  if(acct){const ck=el('label','chk');cb=el('input');cb.type='checkbox';cb.checked=!!acct.news;ck.append(cb,el('span','','אשמח לקבל במייל עדכונים על האפליקציה'));w.append(ck)}
+  w.append(btn('המשך',()=>{
+    const n=nm.value.trim().slice(0,40);
+    if(acct){acct.dname=n||acct.dname||acct.given||'';acct.news=!!(cb&&cb.checked);acct.upd=Date.now();saveAcct()}
+    else{gname=n;try{localStorage.setItem('chords_name',gname)}catch(e){}}
+    ins=sel;setPrefs({ins:sel});finishWel()},'b pr wide'));
   A.append(w);
+}
+function prefsSection(){
+  const s=el('div','sec');s.append(el('h2','sh','העדפות'));
+  const nm=el('input','f');nm.maxLength=40;nm.value=myName();nm.setAttribute('aria-label','שם תצוגה');
+  nm.onchange=()=>{const n=nm.value.trim().slice(0,40);if(acct){acct.dname=n||acct.dname;acct.upd=Date.now();saveAcct();markDirty()}else{gname=n;try{localStorage.setItem('chords_name',gname)}catch(e){}}};
+  s.append(el('label','lbl','שם תצוגה'),nm,el('div','lbl','כלי נגינה מועדף'),insPicker(prefIns,k=>{ins=k;setPrefs({ins:k})}));
+  return s;
 }
 function accountSection(){
   loadGIS().catch(()=>{});
   const s=el('div','sec');s.append(el('h2','sh','חשבון'));
   if(!acct){
     s.append(el('div','hint','התחבר כדי לגבות את השירים ב-Google Drive שלך ולסנכרן בין מכשירים.'));
-    const g=btn('התחבר עם Google',()=>signIn(true),'b pr gbtn');s.append(g,legal());return s}
+    const g=btn('',()=>signIn(true),'gbtn');g.innerHTML=IB.cloud;g.append('התחבר עם Google');s.append(g,legal());return s}
   const box=el('div','acc');box.append(el('div','','מחובר כ-'+acct.email),el('small','',''));
   const st=el('div','hint',{ok:'מסונכרן עם Google Drive.',busy:'מסנכרן...',need:'כדי לסנכרן, לחץ "סנכרן עכשיו".',err:'הסנכרון האחרון נכשל.'}[cloudSt]||'');
-  const lb=el('label','chk');lb.style.display='block';lb.append('שם תצוגה');const nm=el('input','f');nm.value=acct.dname||'';nm.maxLength=40;
-  nm.onchange=()=>{acct.dname=nm.value.trim().slice(0,40)||acct.dname;acct.dnameSet=true;saveAcct();markDirty()};lb.append(nm);
-  const ck=el('label','chk'),cb=el('input');cb.type='checkbox';cb.checked=!!acct.news;cb.onchange=()=>{acct.news=cb.checked;acct.dnameSet=true;saveAcct();markDirty()};ck.append(cb,el('span','','קבלת עדכונים במייל'));
+  const ck=el('label','chk'),cb=el('input');cb.type='checkbox';cb.checked=!!acct.news;cb.onchange=()=>{acct.news=cb.checked;acct.upd=Date.now();saveAcct();markDirty()};ck.append(cb,el('span','','קבלת עדכונים במייל'));
   const r=el('div','row');r.append(btn('סנכרן עכשיו',()=>{if(tokOk())syncNow().then(()=>render());else signIn(false)},'b pr'),btn('התנתק',signOut,'b'));
-  box.append(st,lb,ck,r);s.append(box);
+  box.append(st,ck,r);s.append(box);
   const pl=el('p','legal');const a1=el('a','','תנאי השימוש');a1.href='terms.html';a1.target='_blank';const a2=el('a','','מדיניות הפרטיות');a2.href='privacy.html';a2.target='_blank';pl.append(a1,' · ',a2);s.append(pl);
   return s;
 }
@@ -800,7 +840,7 @@ function settings(){
   const fi=el('input');fi.type='file';fi.accept='.json,application/json';fi.hidden=true;
   fi.onchange=async()=>{const f=fi.files[0];fi.value='';if(!f)return;
     try{const {arr,ins:i2}=parseBk(await f.text()),r=mergeSongs(arr);
-      if(i2==='p'||i2==='g'||i2==='u'){ins=i2;try{localStorage.setItem('chords_ins',ins)}catch(e){}}
+      if(i2==='p'||i2==='g'||i2==='u'){ins=i2;prefIns=i2;savePrefs()}
       msg.textContent='השחזור הסתיים: '+r.a+' שירים נוספו, '+r.u+' עודכנו'+(r.k?', '+r.k+' נשארו כמו שהם':'')+(r.bad?', '+r.bad+' לא נקראו':'')+'.'}
     catch(e){msg.textContent='הקובץ הזה לא נראה כמו גיבוי או שיר של האפליקציה.'}};
   const bb=btn('גבה את כל השירים',async()=>{
@@ -810,7 +850,7 @@ function settings(){
     msg.textContent=r==='ok'?'הגיבוי נשמר ('+S.length+' שירים).':r==='declined'?'הגיבוי בוטל.':'לא הצלחתי לשמור את הקובץ כאן.'},'b pr');
   const r=el('div','row');r.append(bb,btn('שחזר מגיבוי',()=>fi.click(),'b'));
   sec.append(el('h2','sh','גיבוי ושחזור'),el('div','hint','הגיבוי שומר את כל השירים בקובץ אחד. בשחזור, שירים חדשים מתווספים, ושיר שקיים בשני המקומות נשמר בגרסה שנערכה אחרונה. כך טוענים גם שיר שקיבלת כקובץ.'),r,msg,fi);
-  A.append(top,accountSection(),sec);
+  A.append(top,prefsSection(),accountSection(),sec);
 }
 
 const TRI='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>';
@@ -928,7 +968,7 @@ function render(){
   if(closeP)closeP(false);onChord=null;closeP=null;
   metroStop();updCamBtn=()=>{};if(cam&&!(v==='vw'&&cur&&cur.id===cam.songId))camClose();
   const k=v+tab+(cur&&cur.id),y=k===pv?scrollY:0;pv=k;
-  A.textContent='';({list,vw:view,ed:edit,set:settings,gal:gallery,wel:welcome,onb:onboard})[v]();scrollTo(0,y);syncHist();
+  A.textContent='';({list,vw:view,ed:edit,set:settings,gal:gallery,wel:welcome,onb:onboard,load:loading})[v]();scrollTo(0,y);syncHist();
   if(v==='ed'&&tab==='c'&&pk){const e=A.querySelector('.cl.sel,.cc.on');
     if(e){const r=e.getBoundingClientRect(),lim=innerHeight-290;if(r.bottom>lim)scrollBy(0,r.bottom-lim+16);else if(r.top<90)scrollBy(0,r.top-110)}}
 }
