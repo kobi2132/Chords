@@ -87,7 +87,14 @@ textarea.f{min-height:300px;line-height:1.6}
 .sar[hidden]{display:none}
 .pside{flex:0 0 88px;display:flex;gap:6px;align-items:center}.pside.r{justify-content:flex-end}
 .hdr{padding:10px 0 4px}
-.icr{display:flex;gap:8px;align-items:center}
+.icr{display:flex;gap:6px;align-items:center;min-width:0}
+.icr .b.ic{padding:4px 7px}
+html{overflow-x:clip}
+.trow{display:flex;align-items:center;gap:8px;margin:12px 0 0}.trow .sti{flex:1;margin:0;min-width:0}
+.hl{background:none;border:0;padding:4px;cursor:pointer;color:var(--mut);display:inline-flex;align-items:center;justify-content:center}
+.hl svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.hl.on{color:#e11d48}.hl.on svg{fill:currentColor}
+.hl:focus-visible{outline:2px solid var(--ch);outline-offset:2px;border-radius:6px}
 .sti{font-size:1.35rem;margin:12px 0 0;line-height:1.25}
 .sar{display:flex;align-items:center;gap:8px;color:var(--mut);font-size:.85rem;margin:2px 0 14px;min-height:1.2em}
 .cpt{margin-inline-start:auto;background:var(--hl);color:var(--ch);border-radius:6px;padding:1px 8px;font-size:.78rem}
@@ -355,6 +362,7 @@ function list(){
   const fb=ibt('heart',()=>{favOnly=!favOnly;try{localStorage.setItem('chords_fav',favOnly?'1':'0')}catch(e){}render()},'b ic hrt'+(favOnly?' on':''),favOnly?'הצג את כל השירים':'הצג רק מועדפים');
   fb.setAttribute('aria-pressed',favOnly?'true':'false');
   icr.append(fb,ibt('film',()=>{galSong=null;v='gal';render()},'b ic','הסרטונים שלי'),ibt('gear',()=>{v='set';render()},'b ic','הגדרות'));
+  icr.prepend(el('span','sp'));
   hdr.append(icr,el('h1','sti','ספר האקורדים שלי'));
   A.append(hdr);
   const fab=ibt('plus',()=>{cur={id:Date.now(),title:'',artist:'',link:'',dir:'rtl',lines:[],raw:''};v='ed';tab='l';pk=null;render()},'fab','שיר חדש');
@@ -394,7 +402,7 @@ function view(){
       if(r==='fail')toast('לא הצלחתי ליצור את הקובץ כאן')};
     sm.append(lk,fb);
     if(inArtifact)sm.append(el('div','mh','שיתוף בקישור יעבוד אחרי המעבר לאחסון משלך'));
-    sd.append(sb,sm);icr.append(sd,heartBtn(s,'b ic hrt'));
+    sd.append(sb,sm);icr.append(sd);
   }
   icr.append(el('span','sp'));
   mBpm=s.bpm||mBpm||100;
@@ -435,7 +443,8 @@ function view(){
   hdr.append(icr);
   if(inc){const bn=el('div','bnr');bn.append(el('span','','שיר ששותף איתך'),btn('הוסף לשירים שלי',()=>{
     s.upd=s.upd||Date.now();mergeSongs([s]);incoming=null;cur=S.find(x=>x.id===s.id)||s;t=cur.tp||0;toast('השיר נוסף לשירים שלך');render()},'b pr'));hdr.append(bn)}
-  hdr.append(el('h1','sti',s.title),sar);
+  const trw=el('div','trow');trw.append(el('h1','sti',s.title));if(!inc)trw.append(heartBtn(s,'hl hrt'));
+  hdr.append(trw,sar);
   const bd=el('div','bd'),tb=el('div','tb'),r1=el('div','tr1'),r2=el('div','tr2');
   const draw=()=>{bd.textContent='';bd.style.fontSize=fs+'px';s.lines.forEach((l,i)=>bd.append(rl(l,s.dir,false,i)));fix(bd)};
   const dd=el('div','dd'),mn=el('div','mn'),ibn=btn('',()=>{
