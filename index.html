@@ -715,7 +715,16 @@ function paintCloud(){const b=document.getElementById('cloudBtn');if(!b)return;
   const m={ok:['cloudOk','מסונכרן עם Google Drive'],busy:['cloud','מסנכרן...'],need:['cloudNeed','לחץ לסנכרון'],err:['cloudNeed','הסנכרון נכשל. לחץ לנסות שוב']}[cloudSt]||['cloud',''];
   b.innerHTML=IB[m[0]];b.setAttribute('aria-label',m[1]);b.title=m[1];b.className='b ic cld '+cloudSt}
 function loadGIS(){if(gisP)return gisP;gisP=new Promise((res,rej)=>{if(window.google&&google.accounts&&google.accounts.oauth2)return res();const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=()=>res();s.onerror=()=>{gisP=null;rej()};document.head.append(s)});return gisP}
+const REDIR=location.origin+location.pathname.replace(/index\.html$/,'');
+function signInRedirect(first){
+  const st=Math.random().toString(36).slice(2)+Date.now().toString(36);
+  try{localStorage.setItem('chords_oauth',JSON.stringify({st,first:!!first,v,cid:cur&&!incoming?cur.id:null,pend:pend?JSON.stringify(pend):null}))}catch(e){}
+  const p=new URLSearchParams({client_id:GCID,redirect_uri:REDIR,response_type:'token',scope:GSCOPE,include_granted_scopes:'true',state:st});
+  if(first)p.set('prompt','select_account');else if(acct&&acct.email)p.set('login_hint',acct.email);
+  location.href='https://accounts.google.com/o/oauth2/v2/auth?'+p.toString();
+}
 function signIn(first){
+  if(isIOS){signInRedirect(first);return}
   if(!(window.google&&google.accounts&&google.accounts.oauth2)){toast('רגע, טוען את Google...');loadGIS().catch(()=>toast('לא הצלחתי להתחבר ל-Google. בדוק חיבור לאינטרנט'));return}
   if(!tc)tc=google.accounts.oauth2.initTokenClient({client_id:GCID,scope:GSCOPE,
     callback:r=>{if(!r||r.error||!r.access_token){setCloud('need');toast('ההתחברות בוטלה');return}
@@ -1016,8 +1025,23 @@ addEventListener('popstate',()=>{
   else v='list';
   render();
 });
-if(!/^#s=/.test(location.hash)&&!acct&&!welSeen())v='wel';
-if(acct){loadGIS().catch(()=>{});setCloud('need')}
+let oauthBack=null,oauthErr=false;
+(function(){
+  if(!/(^|[#&])(access_token|error)=/.test(location.hash))return;
+  const q=new URLSearchParams(location.hash.slice(1));let s0=null;
+  try{s0=JSON.parse(localStorage.getItem('chords_oauth')||'null');localStorage.removeItem('chords_oauth')}catch(e){}
+  try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+  if(!s0||q.get('state')!==s0.st)return;
+  if(s0.pend){try{pend=JSON.parse(s0.pend)}catch(e){}}
+  if(q.get('access_token')){tok=q.get('access_token');tokExp=Date.now()+((+q.get('expires_in')||3600)-60)*1000;oauthBack=s0}
+  else oauthErr=true;
+})();
+if(oauthBack){
+  if(oauthBack.first){v='load';onFirstLogin()}
+  else{const s2=oauthBack.cid!=null?S.find(x=>x.id===oauthBack.cid):null;if(s2){cur=s2;t=s2.tp||0;v='vw'}else if(oauthBack.v==='set')v='set';syncNow()}
+}else if(oauthErr){setTimeout(()=>toast('ההתחברות בוטלה'),300);if(pend&&!welSeen())v='wel'}
+if(!oauthBack&&!/^#s=/.test(location.hash)&&!acct&&!welSeen())v='wel';
+if(acct){if(!isIOS)loadGIS().catch(()=>{});if(!tokOk())setCloud('need')}
 render();
 (async()=>{try{const sh=await readLink();if(sh){incoming=sh;cur=sh;t=0;v='vw';try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}render()}}catch(e){}})();
 </script>
