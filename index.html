@@ -954,8 +954,9 @@ function signOut(){
   tok=null;tokExp=0;acct=null;saveAcct();setCloud('need');toast('התנתקת. השירים נשארו במכשיר הזה');render();
 }
 const DEMO_ID=1000;
-const demoSong=()=>({id:DEMO_ID,title:'ברוכים הבאים',artist:'ספר האקורדים',link:'',dir:'rtl',bpm:90,upd:Date.now(),lines:JSON.parse(JSON.stringify(DEMO_LINES))});
+const demoSong=()=>({id:DEMO_ID,title:'ברוכים הבאים',artist:'שיר לדוגמה',link:'',dir:'rtl',bpm:90,upd:Date.now(),lines:JSON.parse(JSON.stringify(DEMO_LINES))});
 const DEMO_LINES=[{"t": "", "c": {}, "ty": "c", "x": ["Am", "F", "C", "G"], "lab": "פתיחה"}, {"t": "הכל מתחיל בדף לבן ושקט", "c": {"0": "Am", "18": "F"}}, {"t": "מדביקים מילים ובונים לאט לאט", "c": {"0": "C", "25": "G"}}, {"t": "לוחצים על אות ובוחרים אקורד", "c": {"0": "Am", "22": "F"}}, {"t": "ומה שהיה רק טקסט מתחיל לנגן", "c": {"0": "C", "9": "G", "23": "Am"}}, {"t": "תלחץ על אקורד, תראה איך מנגנים", "c": {"0": "F", "24": "G"}}, {"t": "בפסנתר, בגיטרה או ביוקללי", "c": {"0": "C", "18": "Am"}}, {"t": "תשנה את הטון, תגדיל את המילים", "c": {"0": "F", "23": "G"}}, {"t": "וכל שיר כאן הופך לשלי", "c": {"0": "C", "8": "G", "17": "C"}}, {"t": "הפעל גלילה והשיר זורם לבד", "c": {"0": "Am", "22": "F"}}, {"t": "המטרונום שומר לך על הקצב", "c": {"0": "C", "20": "G"}}, {"t": "ואם בא לך לצלם את עצמך מנגן", "c": {"0": "Am", "23": "F"}}, {"t": "המצלמה מחכה, רק תלחץ ותתחיל", "c": {"0": "C", "13": "G", "21": "Am"}}, {"t": "תלחץ על אקורד, תראה איך מנגנים", "c": {"0": "F", "24": "G"}}, {"t": "בפסנתר, בגיטרה או ביוקללי", "c": {"0": "C", "18": "Am"}}, {"t": "תשנה את הטון, תגדיל את המילים", "c": {"0": "F", "23": "G"}}, {"t": "וכל שיר כאן הופך לשלי", "c": {"0": "C", "8": "G", "17": "C"}}, {"t": "שמור את האהובים עם לב קטן", "c": {"0": "Am", "22": "F"}}, {"t": "סדר בתיקיות, כל שיר במקומו", "c": {"0": "C", "20": "G"}}, {"t": "חפש לפי שם, אמן או מילה", "c": {"0": "Am", "19": "F"}}, {"t": "והשיר שרצית כבר מחכה לך כאן", "c": {"0": "C", "12": "G", "24": "Am"}}, {"t": "", "c": {}, "ty": "c", "x": ["Am", "F", "C", "G"], "lab": "סיום"}, {"t": "עכשיו תורך: לחץ על + והוסף שיר", "c": {"0": "F", "27": "G", "30": "C"}}];
+function fixDemoArtist(){const d=S.find(x=>x.id===DEMO_ID&&x.artist==='ספר האקורדים');if(d){d.artist='שיר לדוגמה';d.upd=Date.now();sv()}}
 function addDemo(force){
   if(S.some(x=>x.id===DEMO_ID))return false;
   if(!force&&DEL[DEMO_ID]!=null)return false;
@@ -1244,6 +1245,7 @@ if(acct){if(!isIOS)loadGIS().catch(()=>{});if(!tokOk())setCloud('need')}
 (function(){const vv=window.visualViewport;if(!vv)return;const st=document.documentElement.style;
   const upd=()=>{st.setProperty('--vvh',vv.height+'px');st.setProperty('--vvt',vv.offsetTop+'px');st.setProperty('--kb',Math.max(0,innerHeight-vv.height-vv.offsetTop)+'px')};
   vv.addEventListener('resize',upd);vv.addEventListener('scroll',upd);upd()})();
+try{fixDemoArtist()}catch(e){}
 render();
 (async()=>{try{const sh=await readLink();if(sh){incoming=sh;cur=sh;t=0;v='vw';try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}render()}}catch(e){}})();
 </script>
