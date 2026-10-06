@@ -418,10 +418,14 @@ function dlg(o){return new Promise(res=>{
   const w=el('div','dlgw'),d=el('div','dlg');d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
   d.append(el('h3','',o.title));if(o.text)d.append(el('p','',o.text));
   let inp=null;if(o.input!=null){inp=el('input','f');inp.value=o.input;inp.maxLength=o.max||80;if(o.ro)inp.readOnly=true;d.append(inp)}
+  let cb=null;
   const done=v2=>{w.remove();document.removeEventListener('keydown',kd,true);dlgClose=null;res(v2)};
-  const ok=()=>{if(inp&&!o.ro){const x=inp.value.trim();if(!x){inp.focus();return}done(x)}else done(true)};
+  const ok=()=>{if(inp&&!o.ro){const x=inp.value.trim();if(!x){inp.focus();return}done(x)}else done(o.check?{checked:!!(cb&&cb.checked)}:true)};
   const kd=e=>{if(e.key==='Escape'){e.preventDefault();done(null)}else if(e.key==='Enter'){e.preventDefault();ok()}};
-  const b=el('div','dlgb');b.append(btn(o.ok||'אישור',ok,'b '+(o.danger?'danger':'pr')),btn(o.cancel||'ביטול',()=>done(null),'b'));
+  const okb=btn(o.ok||'אישור',ok,'b '+(o.danger?'danger':'pr'));
+  if(o.check){const lb=el('label','chk');cb=el('input');cb.type='checkbox';lb.append(cb,el('span','',o.check.label));d.append(lb);
+    cb.onchange=()=>{okb.textContent=cb.checked?o.check.ok:(o.ok||'אישור');okb.className='b '+(cb.checked||o.danger?'danger':'pr')}}
+  const b=el('div','dlgb');b.append(okb,btn(o.cancel||'ביטול',()=>done(null),'b'));
   d.append(b);w.append(d);w.onclick=e=>{if(e.target===w)done(null)};document.body.append(w);
   document.addEventListener('keydown',kd,true);dlgClose=done;
   setTimeout(()=>{if(inp){inp.focus();inp.select()}else b.firstChild.focus()},30);
@@ -489,7 +493,13 @@ function list(){
     arr.forEach(s=>{
       const c=el('div','card'),n=el('div','n');
       n.append(el('div','',s.title),el('small','',s.artist||''));
-      const d=btn('מחק',e=>{e.stopPropagation();if(d.dataset.a){S=S.filter(x=>x.id!==s.id);DEL[s.id]=Date.now();saveDel();sv();draw()}else{d.dataset.a=1;d.textContent='בטוח?'}});
+      const fn2=fSel!=null?(FOL.find(f=>f.id===fSel)||{}).name:'';
+      const killSong=()=>{S=S.filter(x=>x.id!==s.id);DEL[s.id]=Date.now();saveDel();sv();draw()};
+      const d=ibt(fSel!=null?'folderMinus':'trash',e=>{e.stopPropagation();
+        if(fSel==null)dlg({title:'מחיקת שיר',text:'למחוק את "'+s.title+'"? אי אפשר לבטל את הפעולה.',ok:'מחק',danger:true}).then(r=>{if(r)killSong()});
+        else dlg({title:'הסרה מהתיקייה',text:'להסיר את "'+s.title+'" מהתיקייה "'+fn2+'"? השיר יישאר בשירים שלך.',ok:'הסר מהתיקייה',check:{label:'מחק את השיר לגמרי (מכל התיקיות ומהשירים שלי)',ok:'מחק לגמרי'}}).then(r=>{if(!r)return;
+          if(r.checked)killSong();else{const a=(s.fo||[]).filter(x=>x!==fSel);s.fo=a.length?a:undefined;s.upd=Date.now();sv();draw()}})
+      },'b ic',fSel!=null?'הסר מהתיקייה':'מחק שיר');
       const hb=heartBtn(s,'b ic hrt');
       if(favOnly){const o=hb.onclick;hb.onclick=e=>{o(e);if(!s.fav)draw()}}
       c.append(n,hb,d);c.onclick=()=>{cur=s;t=s.tp||0;v='vw';render()};box.append(c);
@@ -645,6 +655,7 @@ const IB={
  dots:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg>',
  folder:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.2l2 2.2h8.8A1.5 1.5 0 0 1 21 8.7v9.8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/></svg>',
  pin:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3.5h6l-1 5.5 3.5 3.5v1.5h-11V12.5L10 9z"/><path d="M12 14v6.5"/></svg>',
+ folderMinus:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.2l2 2.2h8.8A1.5 1.5 0 0 1 21 8.7v9.8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M9 13.5h6"/></svg>',
  share:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>',
  back:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
  ok:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-width="2.4"/></svg>',
@@ -792,7 +803,7 @@ function gallery(){
         const it=el('div','vit'),n=el('div','n');
         n.append(el('div','',fmtD(o.date)),el('small','',fmtT(o.dur||0)+' · '+((o.size||0)/1048576).toFixed(1)+' מ"ב'));
         const pl=btn('',()=>playVideo(o),'b ic','נגן');pl.innerHTML=IB.play;
-        const dl=btn('',e=>{if(dl.dataset.a){vDel(o.id).then(()=>render())}else{dl.dataset.a=1;dl.innerHTML='';dl.textContent='בטוח?'}},'b ic','מחק סרטון');dl.innerHTML=TRI;
+        const dl=ibt('trash',()=>dlg({title:'מחיקת סרטון',text:'למחוק את הסרטון? אם לא שמרת אותו בטלפון, הוא יאבד.',ok:'מחק',danger:true}).then(r=>{if(r)vDel(o.id).then(()=>render())}),'b ic','מחק סרטון');
         const shb=btn('',()=>shareVideo(o),'b ic','שתף סרטון');shb.innerHTML=IB.share;
         const svb=ibt('save',()=>saveVideo(o),'b ic','שמור לטלפון');
         it.append(pl,n,svb,shb,dl);body.append(it);
