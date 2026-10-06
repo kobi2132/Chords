@@ -1084,10 +1084,15 @@ function picker(){
   const spc=el('div');spc.style.height='calc(260px + env(safe-area-inset-bottom,0px))';A.append(spc,b);
 }
 
+function exitEdit(){
+  const leave=()=>{const ex=S.find(x=>x.id===cur.id);if(ex){cur=ex;t=ex.tp||0;v='vw'}else v='list';render()};
+  if(edObj&&edState()!==edSnap){dlg({title:'לצאת בלי לשמור?',text:'יש שינויים בשיר שעוד לא נשמרו.',alt:'שמור וצא',ok:'צא בלי לשמור',danger:true,cancel:'המשך לערוך'}).then(r=>{if(v!=='ed')return;if(r==='alt')saveEdit();else if(r)leave()});return}
+  leave();
+}
 function saveEdit(){const s=cur;sync();s.title=s.title.trim()||'ללא שם';s.upd=Date.now();const i=S.findIndex(x=>x.id===s.id);i<0?S.push(s):S[i]=s;sv();cur=s;v='vw';t=s.tp||0;render()}
 function edit(){
   const s=cur,top=el('div','bar');
-  top.append(btn('ביטול',()=>{v='list';render()}),el('b','tt',s.title||'שיר חדש'),
+  top.append(btn('ביטול',exitEdit),el('b','tt',s.title||'שיר חדש'),
     btn('שמור',saveEdit,'b pr'));
   A.append(top);
   const inp=(k,ph)=>{const i=el('input','f');i.placeholder=ph;i.value=s[k]||'';i.oninput=()=>{s[k]=i.value;if(k==='title')top.querySelector('.tt').textContent=i.value||'שיר חדש'};return i};
@@ -1170,9 +1175,8 @@ addEventListener('popstate',()=>{
   armed=false;
   if(closeOverlay()){syncHist();return}
   if(v==='ed'){
-    const leave=()=>{const ex=S.find(x=>x.id===cur.id);if(ex){cur=ex;t=ex.tp||0;v='vw'}else v='list';render()};
-    if(edObj&&edState()!==edSnap){syncHist();dlg({title:'לצאת בלי לשמור?',text:'יש שינויים בשיר שעוד לא נשמרו.',alt:'שמור וצא',ok:'צא בלי לשמור',danger:true,cancel:'המשך לערוך'}).then(r=>{if(v!=='ed')return;if(r==='alt')saveEdit();else if(r)leave()});return}
-    leave();return;
+    if(edObj&&edState()!==edSnap)syncHist();
+    exitEdit();return;
   }else if(v==='vw'){stop();if(cur===incoming){incoming=null}cur=null;v='list'}
   else if(v==='wel'||v==='onb'){if(v==='onb')setWel();if(pend){pend=null}v=incoming?'vw':'list'}
   else if(v==='gal'){const sg=galSong!=null?S.find(x=>x.id===galSong):null;galSong=null;if(sg){cur=sg;t=sg.tp||0;v='vw'}else v='list'}
