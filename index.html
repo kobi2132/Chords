@@ -132,6 +132,11 @@ html{overflow-x:clip}
 .dlg .f{margin:6px 0 14px}.dlgb{display:flex;gap:8px;justify-content:flex-start}
 .danger{background:#dc2626;border-color:#dc2626;color:#fff;font-weight:700}
 input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-search-decoration{-webkit-appearance:none;appearance:none;display:none}
+.dlg .plist{max-height:min(45vh,340px);overflow-y:auto;margin:6px 0 12px}
+.dlg .pick{margin:4px 0;padding:8px 10px}
+.nfr{display:flex;gap:6px;margin:4px 0}.nfr .f{margin:0;flex:1}
+.fpb{display:flex;align-items:center;gap:8px;text-align:start;width:100%}.fpb svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;flex:none}
+.fpb small{display:block;color:var(--mut);font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fpb .n{flex:1;min-width:0}
 .hello{color:var(--mut);margin:2px 0 12px;font-size:.95rem}
 .legal{font-size:.8rem;color:var(--mut);margin:10px 0 26px}.legal a{color:var(--ch)}
 .skip{background:none;border:0;color:var(--fg);text-decoration:underline;cursor:pointer;font-size:.95rem;padding:8px}
@@ -430,6 +435,27 @@ function dlg(o){return new Promise(res=>{
   document.addEventListener('keydown',kd,true);dlgClose=done;
   setTimeout(()=>{if(inp){inp.focus();inp.select()}else b.firstChild.focus()},30);
 })}
+function folderPicker(s,after){
+  if(dlgClose)dlgClose(null);
+  const w=el('div','dlgw'),d=el('div','dlg');d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
+  d.append(el('h3','','הוסף לתיקייה'));
+  const nfr=el('div','nfr'),ni=el('input','f');ni.placeholder='שם תיקייה חדשה';ni.maxLength=40;
+  const mk=()=>{const n=ni.value.trim().slice(0,40);if(!n)return;const f={id:Date.now(),name:n};FOL.push(f);folChanged();s.fo=(s.fo||[]).concat(f.id);ni.value='';draw()};
+  ni.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();mk()}};
+  const cb=ibt('folderPlus',mk,'b ic','צור תיקייה');nfr.append(ni,cb);
+  const pl=el('div','plist');
+  const draw=()=>{pl.textContent='';
+    if(!FOL.length){pl.append(el('div','hint','עוד אין תיקיות. כתוב שם למעלה כדי ליצור.'));return}
+    [...FOL].sort((a,b)=>(!!b.pin-!!a.pin)||a.name.localeCompare(b.name,'he')).forEach(f=>{
+      const r=el('label','pick'),c=el('input');c.type='checkbox';c.checked=(s.fo||[]).includes(f.id);
+      c.onchange=()=>{const a=(s.fo||[]).filter(x=>x!==f.id);if(c.checked)a.push(f.id);s.fo=a.length?a:undefined};
+      r.append(c,el('span','n',f.name));pl.append(r)})};
+  const done=()=>{w.remove();document.removeEventListener('keydown',kd,true);dlgClose=null;if(after)after()};
+  const kd=e=>{if(e.key==='Escape'){e.preventDefault();done()}};
+  const b=el('div','dlgb');b.append(btn('סיום',done,'b pr'));
+  d.append(nfr,pl,b);w.append(d);w.onclick=e=>{if(e.target===w)done()};document.body.append(w);
+  document.addEventListener('keydown',kd,true);dlgClose=()=>done();draw();
+}
 function newFolder(after){dlg({title:'תיקייה חדשה',input:'',max:40,ok:'צור'}).then(n=>{if(!n)return;const f={id:Date.now(),name:n.slice(0,40)};FOL.push(f);folChanged();if(after)after(f)})}
 function list(){
   const hdr=el('div','hdr'),icr=el('div','icr');
@@ -477,7 +503,7 @@ function list(){
     const m3=el('button','mi','מחק תיקייה');m3.onclick=()=>{cl();dlg({title:'מחיקת תיקייה',text:'למחוק את התיקייה "'+cf.name+'"? השירים עצמם לא יימחקו.',ok:'מחק',danger:true}).then(ok=>{if(ok){FOL=FOL.filter(x=>x.id!==cf.id);fSel=null;folChanged();render()}})};
     am.append(m1,m2,m3);ad.append(abt,am);fr0.append(ad);
   }
-  fr0.append(ibt('plus',()=>newFolder(f=>{fSel=f.id;render()}),'b ic','תיקייה חדשה'));
+  fr0.append(ibt('folderPlus',()=>newFolder(f=>{fSel=f.id;render()}),'b ic','תיקייה חדשה'));
   A.append(fr0);
   const box=el('div');A.append(box);
   function draw(){
@@ -656,6 +682,7 @@ const IB={
  folder:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.2l2 2.2h8.8A1.5 1.5 0 0 1 21 8.7v9.8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/></svg>',
  pin:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3.5h6l-1 5.5 3.5 3.5v1.5h-11V12.5L10 9z"/><path d="M12 14v6.5"/></svg>',
  folderMinus:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.2l2 2.2h8.8A1.5 1.5 0 0 1 21 8.7v9.8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M9 13.5h6"/></svg>',
+ folderPlus:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.2l2 2.2h8.8A1.5 1.5 0 0 1 21 8.7v9.8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M9 13.5h6M12 10.5v6"/></svg>',
  share:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>',
  back:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
  ok:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-width="2.4"/></svg>',
@@ -1074,10 +1101,9 @@ function edit(){
   [['pub','ציבורי'],['priv','פרטי']].forEach(([x,y])=>{const o=el('option','',y);o.value=x;ps.append(o)});
   ps.value=s.priv?'priv':'pub';ps.onchange=()=>{s.priv=ps.value==='priv'||undefined};
   const r3=el('div','row');r3.append(inp('link','קישור לשיר (לא חובה)'),ps);
-  const fr=el('div','fsel');
-  const drawF=()=>{fr.textContent='';fr.append(el('span','hint','תיקיות:'));
-    [...FOL].sort((a,b)=>a.name.localeCompare(b.name,'he')).forEach(f=>{const on=(s.fo||[]).includes(f.id);fr.append(btn(f.name,()=>{const a=(s.fo||[]).filter(x=>x!==f.id);if(!on)a.push(f.id);s.fo=a.length?a:undefined;drawF()},'b chip'+(on?' on':'')))});
-    fr.append(btn('+ חדשה',()=>newFolder(f=>{s.fo=(s.fo||[]).concat(f.id);drawF()}),'b chip add'))};
+  const fr=el('div','fsel'),fpb=btn('',()=>folderPicker(s,drawF),'b fpb');fr.append(fpb);
+  const drawF=()=>{const nm=FOL.filter(f=>(s.fo||[]).includes(f.id)).map(f=>f.name).sort((a,b)=>a.localeCompare(b,'he'));
+    fpb.innerHTML=IB.folderPlus;const n=el('span','n');n.append(el('span','','הוסף לתיקייה'),el('small','',nm.length?nm.join(', '):'לא בתיקייה'));fpb.append(n)};
   drawF();
   A.append(row,r2,r3,fr,tb);
   if(tab==='l'){
