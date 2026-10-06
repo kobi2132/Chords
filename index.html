@@ -131,7 +131,7 @@ html{overflow-x:clip}
 .dlgw{position:fixed;inset-inline:0;top:var(--vvt,0px);height:var(--vvh,100%);z-index:50;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;padding:max(16px,min(12vh,80px)) 16px 16px;box-sizing:border-box;overflow-y:auto}
 .dlg{background:var(--cd);color:var(--fg);border:1px solid var(--bd);border-radius:14px;padding:18px;width:100%;max-width:360px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
 .dlg h3{margin:0 0 8px;font-size:1.1rem}.dlg p{margin:0 0 10px;color:var(--mut);font-size:.95rem}
-.dlg .f{margin:6px 0 14px}.dlgb{display:flex;gap:8px;justify-content:flex-start}
+.dlg .f{margin:6px 0 14px}.dlgb{display:flex;gap:8px;justify-content:flex-start;flex-wrap:wrap}
 .danger{background:#dc2626;border-color:#dc2626;color:#fff;font-weight:700}
 input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-search-decoration{-webkit-appearance:none;appearance:none;display:none}
 .dlg .plist{max-height:min(45vh,340px);overflow-y:auto;margin:6px 0 12px}
@@ -432,7 +432,7 @@ function dlg(o){return new Promise(res=>{
   const okb=o.icons?ibt('ok',ok,'b ic '+(o.danger?'danger':'pr'),o.ok||'אישור'):btn(o.ok||'אישור',ok,'b '+(o.danger?'danger':'pr'));
   if(o.check){const lb=el('label','chk');cb=el('input');cb.type='checkbox';lb.append(cb,el('span','',o.check.label));d.append(lb);
     cb.onchange=()=>{okb.textContent=cb.checked?o.check.ok:(o.ok||'אישור');okb.className='b '+(cb.checked||o.danger?'danger':'pr')}}
-  const b=el('div','dlgb');b.append(okb,o.icons?ibt('close',()=>done(null),'b ic',o.cancel||'ביטול'):btn(o.cancel||'ביטול',()=>done(null),'b'));
+  const b=el('div','dlgb');if(o.alt)b.append(btn(o.alt,()=>done('alt'),'b pr'));b.append(okb,o.icons?ibt('close',()=>done(null),'b ic',o.cancel||'ביטול'):btn(o.cancel||'ביטול',()=>done(null),'b'));
   d.append(b);w.append(d);w.onclick=e=>{if(e.target===w)done(null)};document.body.append(w);
   document.addEventListener('keydown',kd,true);dlgClose=done;
   setTimeout(()=>{if(inp){inp.focus();inp.select()}else b.firstChild.focus()},30);
@@ -1084,10 +1084,11 @@ function picker(){
   const spc=el('div');spc.style.height='calc(260px + env(safe-area-inset-bottom,0px))';A.append(spc,b);
 }
 
+function saveEdit(){const s=cur;sync();s.title=s.title.trim()||'ללא שם';s.upd=Date.now();const i=S.findIndex(x=>x.id===s.id);i<0?S.push(s):S[i]=s;sv();cur=s;v='vw';t=s.tp||0;render()}
 function edit(){
   const s=cur,top=el('div','bar');
   top.append(btn('ביטול',()=>{v='list';render()}),el('b','tt',s.title||'שיר חדש'),
-    btn('שמור',()=>{sync();s.title=s.title.trim()||'ללא שם';s.upd=Date.now();const i=S.findIndex(x=>x.id===s.id);i<0?S.push(s):S[i]=s;sv();cur=s;v='vw';t=s.tp||0;render()},'b pr'));
+    btn('שמור',saveEdit,'b pr'));
   A.append(top);
   const inp=(k,ph)=>{const i=el('input','f');i.placeholder=ph;i.value=s[k]||'';i.oninput=()=>{s[k]=i.value;if(k==='title')top.querySelector('.tt').textContent=i.value||'שיר חדש'};return i};
   const dt=btn(s.dir==='rtl'?'עב':'EN',()=>{s.dir=s.dir==='rtl'?'ltr':'rtl';s.dset=true;render()},'b','כיוון כתיבה: '+(s.dir==='rtl'?'עברית':'אנגלית')+' (לחץ להחלפה)');
@@ -1170,7 +1171,7 @@ addEventListener('popstate',()=>{
   if(closeOverlay()){syncHist();return}
   if(v==='ed'){
     const leave=()=>{const ex=S.find(x=>x.id===cur.id);if(ex){cur=ex;t=ex.tp||0;v='vw'}else v='list';render()};
-    if(edObj&&edState()!==edSnap){syncHist();dlg({title:'לצאת בלי לשמור?',text:'השינויים שעשית בשיר לא יישמרו.',ok:'צא בלי לשמור',danger:true,cancel:'המשך לערוך'}).then(ok=>{if(ok&&v==='ed')leave()});return}
+    if(edObj&&edState()!==edSnap){syncHist();dlg({title:'לצאת בלי לשמור?',text:'יש שינויים בשיר שעוד לא נשמרו.',alt:'שמור וצא',ok:'צא בלי לשמור',danger:true,cancel:'המשך לערוך'}).then(r=>{if(v!=='ed')return;if(r==='alt')saveEdit();else if(r)leave()});return}
     leave();return;
   }else if(v==='vw'){stop();if(cur===incoming){incoming=null}cur=null;v='list'}
   else if(v==='wel'||v==='onb'){if(v==='onb')setWel();if(pend){pend=null}v=incoming?'vw':'list'}
