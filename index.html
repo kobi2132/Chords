@@ -953,8 +953,19 @@ function signOut(){
   try{if(tok&&window.google&&google.accounts&&google.accounts.oauth2)google.accounts.oauth2.revoke(tok,()=>{})}catch(e){}
   tok=null;tokExp=0;acct=null;saveAcct();setCloud('need');toast('התנתקת. השירים נשארו במכשיר הזה');render();
 }
+const DEMO_ID=1000;
+const demoSong=()=>({id:DEMO_ID,title:'ברוכים הבאים',artist:'ספר האקורדים',link:'',dir:'rtl',bpm:90,upd:Date.now(),lines:JSON.parse(JSON.stringify(DEMO_LINES))});
+const DEMO_LINES=[{"t": "", "c": {}, "ty": "c", "x": ["Am", "F", "C", "G"], "lab": "פתיחה"}, {"t": "הכל מתחיל בדף לבן ושקט", "c": {"0": "Am", "18": "F"}}, {"t": "מדביקים מילים ובונים לאט לאט", "c": {"0": "C", "25": "G"}}, {"t": "לוחצים על אות ובוחרים אקורד", "c": {"0": "Am", "22": "F"}}, {"t": "ומה שהיה רק טקסט מתחיל לנגן", "c": {"0": "C", "9": "G", "23": "Am"}}, {"t": "תלחץ על אקורד, תראה איך מנגנים", "c": {"0": "F", "24": "G"}}, {"t": "בפסנתר, בגיטרה או ביוקללי", "c": {"0": "C", "18": "Am"}}, {"t": "תשנה את הטון, תגדיל את המילים", "c": {"0": "F", "23": "G"}}, {"t": "וכל שיר כאן הופך לשלי", "c": {"0": "C", "8": "G", "17": "C"}}, {"t": "הפעל גלילה והשיר זורם לבד", "c": {"0": "Am", "22": "F"}}, {"t": "המטרונום שומר לך על הקצב", "c": {"0": "C", "20": "G"}}, {"t": "ואם בא לך לצלם את עצמך מנגן", "c": {"0": "Am", "23": "F"}}, {"t": "המצלמה מחכה, רק תלחץ ותתחיל", "c": {"0": "C", "13": "G", "21": "Am"}}, {"t": "תלחץ על אקורד, תראה איך מנגנים", "c": {"0": "F", "24": "G"}}, {"t": "בפסנתר, בגיטרה או ביוקללי", "c": {"0": "C", "18": "Am"}}, {"t": "תשנה את הטון, תגדיל את המילים", "c": {"0": "F", "23": "G"}}, {"t": "וכל שיר כאן הופך לשלי", "c": {"0": "C", "8": "G", "17": "C"}}, {"t": "שמור את האהובים עם לב קטן", "c": {"0": "Am", "22": "F"}}, {"t": "סדר בתיקיות, כל שיר במקומו", "c": {"0": "C", "20": "G"}}, {"t": "חפש לפי שם, אמן או מילה", "c": {"0": "Am", "19": "F"}}, {"t": "והשיר שרצית כבר מחכה לך כאן", "c": {"0": "C", "12": "G", "24": "Am"}}, {"t": "", "c": {}, "ty": "c", "x": ["Am", "F", "C", "G"], "lab": "סיום"}, {"t": "עכשיו תורך: לחץ על + והוסף שיר", "c": {"0": "F", "27": "G", "30": "C"}}];
+function addDemo(force){
+  if(S.some(x=>x.id===DEMO_ID))return false;
+  if(!force&&DEL[DEMO_ID]!=null)return false;
+  if(DEL[DEMO_ID]!=null){delete DEL[DEMO_ID];saveDel()}
+  S.push(demoSong());sv();return true;
+}
 function finishWel(){
   setWel();
+  let dm=false;try{dm=localStorage.getItem('chords_demo')==='1'}catch(e){}
+  if(!dm){if(!S.length)addDemo(false);try{localStorage.setItem('chords_demo','1')}catch(e){}}
   if(pend){const s=pend;pend=null;s.upd=s.upd||Date.now();mergeSongs([s]);incoming=null;cur=S.find(x=>x.id===s.id)||s;t=cur.tp||0;v='vw';toast('השיר נוסף לשירים שלך')}
   else v='list';
   render();
@@ -1001,6 +1012,7 @@ function prefsSection(){
   const nm=el('input','f');nm.maxLength=40;nm.value=myName();nm.setAttribute('aria-label','שם תצוגה');
   nm.onchange=()=>{const n=nm.value.trim().slice(0,40);if(acct){acct.dname=n||acct.dname;acct.upd=Date.now();saveAcct();markDirty()}else{gname=n;try{localStorage.setItem('chords_name',gname)}catch(e){}}};
   s.append(el('label','lbl','שם תצוגה'),nm,el('div','lbl','כלי נגינה מועדף'),insPicker(prefIns,k=>{ins=k;setPrefs({ins:k})}));
+  s.append(el('div','lbl','שיר לדוגמה'),btn('הוסף את השיר לדוגמה',()=>{if(addDemo(true))toast('השיר "ברוכים הבאים" נוסף לשירים שלך');else toast('השיר לדוגמה כבר נמצא בשירים שלך')},'b'));
   return s;
 }
 function accountSection(){
