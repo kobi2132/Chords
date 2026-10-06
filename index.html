@@ -1058,7 +1058,7 @@ function newDoc(){const d=new pdfLib({unit:'pt',format:'a4'});d.addFileToVFS('Al
 function pdfBox(){const b=el('div','pdfbox bd');b.dir='rtl';b.style.cssText='position:fixed;left:-20000px;top:0;width:'+CW+'px;font-size:13px;line-height:1.35;color:#111;background:#fff';document.body.append(b);return b}
 const ascC=document.createElement('canvas').getContext('2d'),ascM={};
 function ascent(sz,bold){const k=sz+'|'+bold;if(ascM[k]==null){ascC.font=(bold?'700 ':'400 ')+sz+'px PdfAlef';const m=ascC.measureText('אA');ascM[k]=m.fontBoundingBoxAscent||sz*.8}return ascM[k]}
-function drawEl(doc,node,xBase,yBase,yTarget){
+function drawEl(doc,node,xBase,yBase,yTarget,xT=MX){
   const w=document.createTreeWalker(node,NodeFilter.SHOW_TEXT),rg=document.createRange();let n;
   while((n=w.nextNode())){
     const txt=n.nodeValue;if(!txt||!txt.trim())continue;
@@ -1068,16 +1068,16 @@ function drawEl(doc,node,xBase,yBase,yTarget){
     const c=(cs.color.match(/[\d.]+/g)||[0,0,0]).map(Number);doc.setTextColor(c[0],c[1],c[2]);
     const a=ascent(sz,bold);let off=0;
     for(const ch of Array.from(txt)){const L=ch.length;
-      if(ch.trim()&&ch!=='→'){rg.setStart(n,off);rg.setEnd(n,off+L);const r=rg.getClientRects()[0];if(r&&r.width)doc.text(ch,MX+(r.left-xBase),yTarget+(r.top-yBase)+a)}
+      if(ch.trim()&&ch!=='→'){rg.setStart(n,off);rg.setEnd(n,off+L);const r=rg.getClientRects()[0];if(r&&r.width)doc.text(ch,xT+(r.left-xBase),yTarget+(r.top-yBase)+a)}
       off+=L}
   }
 }
-function paginate(box){
+function paginate(box,hf=()=>CH){
   const base=box.getBoundingClientRect().top,ps=[...box.children].map(b=>{const r=b.getBoundingClientRect();return{b,top:r.top-base,bot:r.bottom-base}});
   const pages=[];let cur=null,pt=0;
-  ps.forEach((p,i)=>{
-    let br=!cur||(p.bot-pt>CH&&cur.items.length);
-    if(!br&&p.b.classList.contains('sec')&&ps[i+1]&&ps[i+1].bot-pt>CH)br=true;
+  ps.forEach((p,i)=>{const H=hf(pages.length-1);
+    let br=!cur||(p.bot-pt>H&&cur.items.length);
+    if(!br&&p.b.classList.contains('sec')&&ps[i+1]&&ps[i+1].bot-pt>H)br=true;
     if(br){pt=cur?p.top:0;cur={top:pt,items:[]};pages.push(cur)}
     cur.items.push(p);
   });
@@ -1087,11 +1087,33 @@ function drawPage(doc,box,pg){const r=box.getBoundingClientRect();pg.items.forEa
 function footBox(){const b=pdfBox();const f=el('div','pfoot','נוצר באפליקציה: "ספר האקורדים שלי"');b.append(f);return b}
 function drawFoot(doc,fb,num){const r=fb.getBoundingClientRect();drawEl(doc,fb,r.left,r.top,PH-MB+26);if(num){doc.setFont('Alef','normal');doc.setFontSize(8);doc.setTextColor(136,136,136);doc.text(String(num),MX,PH-MB+26+ascent(8,false))}}
 function metaFor(s,sh,mine,pianoCapo){const m=[];if(s.artist)m.push(s.artist);if(s.cp>0)m.push('קאפו '+s.cp+(pianoCapo?' (כלול באקורדים)':''));const tp=mine?(s.tp||0):0;if(tp)m.push('טון '+(tp>0?'+':'−')+Math.abs(tp));return m}
-function songInto(box,s,sh,meta){
-  const hd=el('div','pdfh');hd.append(el('div','pt',s.title));if(meta.length)hd.append(el('div','pm',meta.join(' · ')));box.append(hd);
+function songInto(box,s,sh,meta,noHead){
+  if(!noHead){const hd=el('div','pdfh');hd.append(el('div','pt',s.title));if(meta.length)hd.append(el('div','pm',meta.join(' · ')));box.append(hd)}
   const sv0={cur,t,ins,v};cur=s;v='vw';t=sh;ins='g';
   try{s.lines.forEach((l,i)=>box.append(rl(l,s.dir,false,i)))}finally{cur=sv0.cur;t=sv0.t;ins=sv0.ins;v=sv0.v}
   fix(box);
+}
+const CG=24,CWc=(CW-CG)/2;
+function songLayout(s,sh,meta){
+  const one=mkBox();songInto(one,s,sh,meta);const p1=paginate(one);
+  const L1={n:p1.length,draw:(doc,i)=>drawPage(doc,one,p1[i])};
+  if(p1.length<2)return L1;
+  const hb=mkBox();songInto(hb,s,sh,meta);[...hb.children].slice(1).forEach(c=>c.remove());
+  const hh=hb.firstChild.getBoundingClientRect().height+16;
+  const col=mkBox();col.style.width=CWc+'px';col.dir=s.dir==='ltr'?'ltr':'rtl';songInto(col,s,sh,meta,true);
+  const a=[...one.children].slice(1),b=[...col.children];if(a.length!==b.length)return L1;
+  let wr=0;a.forEach((x,i)=>{if(b[i].getBoundingClientRect().height>x.getBoundingClientRect().height+4)wr++});
+  if(wr>2)return L1;
+  const sl=paginate(col,k=>k<2?CH-hh:CH),n=Math.ceil(sl.length/2);
+  if(n>=p1.length)return L1;
+  const ltr=s.dir==='ltr';
+  return{n,draw:(doc,i)=>{
+    const r=col.getBoundingClientRect(),y0=i?MT:MT+hh;
+    if(!i){const hr=hb.getBoundingClientRect();drawEl(doc,hb,hr.left,hr.top,MT)}
+    [0,1].forEach(c=>{const g=sl[i*2+c];if(!g)return;const xT=(c===0)!==ltr?MX+CW-CWc:MX;
+      g.items.forEach(p=>drawEl(doc,p.b,r.left,r.top+g.top,y0,xT))});
+    if(sl[i*2+1]){doc.setDrawColor(221,221,221);doc.setLineWidth(.5);doc.line(MX+CW/2,y0,MX+CW/2,PH-MB)}
+  }};
 }
 function savePdf(doc,name){
   const blob=doc.output('blob');
@@ -1103,22 +1125,22 @@ const mkBox=()=>{const b=pdfBox();boxes.push(b);return b};
 async function songPdf(s,mine){
   try{toast('מכין PDF...',1500);await pdfReady();await document.fonts.ready;
     const pc=mine&&ins==='p'&&s.cp>0,sh=mine?t+(ins==='p'?(s.cp||0):0):0;
-    const doc=newDoc(),box=mkBox();songInto(box,s,sh,metaFor(s,sh,mine,pc));
+    const doc=newDoc(),L=songLayout(s,sh,metaFor(s,sh,mine,pc));
     const fb=mkBox();fb.append(el('div','pfoot','נוצר באפליקציה: "ספר האקורדים שלי"'));
-    paginate(box).forEach((pg,i)=>{if(i)doc.addPage();drawPage(doc,box,pg);drawFoot(doc,fb,0)});
+    for(let i=0;i<L.n;i++){if(i)doc.addPage();L.draw(doc,i);drawFoot(doc,fb,0)}
     savePdf(doc,fname(s.title)+'.pdf');
   }catch(e){toast('לא הצלחתי ליצור PDF. בדוק חיבור לאינטרנט ונסה שוב',3500)}finally{cleanBoxes()}
 }
 async function bookPdf(f,songs,mine){
   try{toast('מכין שירון...',2000);await pdfReady();await document.fonts.ready;
     const doc=newDoc(),fb=mkBox();fb.append(el('div','pfoot','נוצר באפליקציה: "ספר האקורדים שלי"'));
-    const its=songs.map(s=>{const box=mkBox(),pc=mine&&ins==='p'&&s.cp>0,sh=mine?(s.tp||0)+(ins==='p'?(s.cp||0):0):0;songInto(box,s,sh,metaFor(s,sh,mine,pc));return{s,box,pages:paginate(box)}});
+    const its=songs.map(s=>{const pc=mine&&ins==='p'&&s.cp>0,sh=mine?(s.tp||0)+(ins==='p'?(s.cp||0):0):0;return{s,L:songLayout(s,sh,metaFor(s,sh,mine,pc))}});
     const cover=nums=>{const box=mkBox(),hd=el('div','pdfh');hd.append(el('div','pt big',f.name),el('div','pm','שירון · '+songs.length+' שירים'));box.append(hd);
       its.forEach((it,i)=>{const r=el('div','toc');r.append(el('span','',it.s.title+(it.s.artist?' · '+it.s.artist:'')),el('span','tn',nums?String(nums[i]):'000'));box.append(r)});return box};
-    let cb=cover(null),cp=paginate(cb);let p=cp.length+1;const nums=its.map(it=>{const n=p;p+=it.pages.length;return n});
+    let cb=cover(null),cp=paginate(cb);let p=cp.length+1;const nums=its.map(it=>{const n=p;p+=it.L.n;return n});
     cb=cover(nums);cp=paginate(cb);
     let pn=0;const page=(box,pg)=>{if(pn)doc.addPage();pn++;drawPage(doc,box,pg);drawFoot(doc,fb,pn)};
-    cp.forEach(pg=>page(cb,pg));its.forEach(it=>it.pages.forEach(pg=>page(it.box,pg)));
+    cp.forEach(pg=>page(cb,pg));its.forEach(it=>{for(let i=0;i<it.L.n;i++){if(pn)doc.addPage();pn++;it.L.draw(doc,i);drawFoot(doc,fb,pn)}});
     savePdf(doc,fname(f.name)+'.pdf');
   }catch(e){toast('לא הצלחתי ליצור את השירון. בדוק חיבור לאינטרנט ונסה שוב',3500)}finally{cleanBoxes()}
 }
