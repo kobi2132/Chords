@@ -66,6 +66,8 @@ textarea.f{min-height:300px;line-height:1.6}
 .cl.sel{background:var(--hl);box-shadow:0 0 0 2px var(--ch)}
 .cr{margin:2px 0 6px;margin-inline-start:2.2em}
 .hd{display:flex;gap:8px;align-items:center;color:var(--mut);font-size:.8em;margin-bottom:2px}
+.bd .cr.lb1{margin-top:1.1em}.bd .cr.lb1:first-child{margin-top:0}
+.cr.sec .hd{font-weight:700;font-size:.8em;margin-bottom:0}
 .cx{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-weight:700;color:var(--ch);direction:ltr;justify-content:flex-start;font-size:.8em}
 .cr.rtl .cx{justify-content:flex-end}
 .cx .cc{font:inherit}
@@ -327,12 +329,12 @@ const IC={
 const NM={p:'פסנתר',g:'גיטרה',u:'יוקללי'};
 
 function rc(l,dir,edit,li){
-  const d=el('div','cr '+dir),first=li===0||cur.lines[li-1].ty!=='c';
+  const hasC=l.x.length>0,pv0=li>0?cur.lines[li-1]:null,first=hasC&&!(pv0&&pv0.ty==='c'&&pv0.x.length),d=el('div','cr '+dir+(l.lab?' lb1':'')+(!hasC&&!edit?' sec':''));
   d.dir=dir;
   const hd=el('div','hd');
   if(edit){const i=el('input','lb');i.placeholder='כותרת (פתיחה, מעבר...)';i.value=l.lab||'';i.oninput=()=>{l.lab=i.value};hd.append(i)}
   else if(l.lab)hd.append(el('span','',l.lab));
-  if(first){const a=el('span','','→');a.title='האקורדים נקראים משמאל לימין';a.setAttribute('aria-label','האקורדים נקראים משמאל לימין');hd.append(a)}
+  if(first&&(edit||hasC)){const a=el('span','','→');a.title='האקורדים נקראים משמאל לימין';a.setAttribute('aria-label','האקורדים נקראים משמאל לימין');hd.append(a)}
   if(hd.childNodes.length)d.append(hd);
   const r=el('div','cx');
   l.x.forEach((c,j)=>{
@@ -954,9 +956,9 @@ function signOut(){
   tok=null;tokExp=0;acct=null;saveAcct();setCloud('need');toast('התנתקת. השירים נשארו במכשיר הזה');render();
 }
 const DEMO_ID=1000;
-const demoSong=()=>({id:DEMO_ID,title:'ברוכים הבאים',artist:'שיר לדוגמה',link:'',dir:'rtl',bpm:90,upd:Date.now(),lines:JSON.parse(JSON.stringify(DEMO_LINES))});
-const DEMO_LINES=[{"t": "", "c": {}, "ty": "c", "x": ["Am", "F", "C", "G"], "lab": "פתיחה"}, {"t": "הכל מתחיל בדף לבן ושקט", "c": {"0": "Am", "18": "F"}}, {"t": "מדביקים מילים ובונים לאט לאט", "c": {"0": "C", "25": "G"}}, {"t": "לוחצים על אות ובוחרים אקורד", "c": {"0": "Am", "22": "F"}}, {"t": "ומה שהיה רק טקסט מתחיל לנגן", "c": {"0": "C", "9": "G", "23": "Am"}}, {"t": "תלחץ על אקורד, תראה איך מנגנים", "c": {"0": "F", "24": "G"}}, {"t": "בפסנתר, בגיטרה או ביוקללי", "c": {"0": "C", "18": "Am"}}, {"t": "תשנה את הטון, תגדיל את המילים", "c": {"0": "F", "23": "G"}}, {"t": "וכל שיר כאן הופך לשלי", "c": {"0": "C", "8": "G", "17": "C"}}, {"t": "הפעל גלילה והשיר זורם לבד", "c": {"0": "Am", "22": "F"}}, {"t": "המטרונום שומר לך על הקצב", "c": {"0": "C", "20": "G"}}, {"t": "ואם בא לך לצלם את עצמך מנגן", "c": {"0": "Am", "23": "F"}}, {"t": "המצלמה מחכה, רק תלחץ ותתחיל", "c": {"0": "C", "13": "G", "21": "Am"}}, {"t": "תלחץ על אקורד, תראה איך מנגנים", "c": {"0": "F", "24": "G"}}, {"t": "בפסנתר, בגיטרה או ביוקללי", "c": {"0": "C", "18": "Am"}}, {"t": "תשנה את הטון, תגדיל את המילים", "c": {"0": "F", "23": "G"}}, {"t": "וכל שיר כאן הופך לשלי", "c": {"0": "C", "8": "G", "17": "C"}}, {"t": "שמור את האהובים עם לב קטן", "c": {"0": "Am", "22": "F"}}, {"t": "סדר בתיקיות, כל שיר במקומו", "c": {"0": "C", "20": "G"}}, {"t": "חפש לפי שם, אמן או מילה", "c": {"0": "Am", "19": "F"}}, {"t": "והשיר שרצית כבר מחכה לך כאן", "c": {"0": "C", "12": "G", "24": "Am"}}, {"t": "", "c": {}, "ty": "c", "x": ["Am", "F", "C", "G"], "lab": "סיום"}, {"t": "עכשיו תורך: לחץ על + והוסף שיר", "c": {"0": "F", "27": "G", "30": "C"}}];
-function fixDemoArtist(){const d=S.find(x=>x.id===DEMO_ID&&x.artist==='ספר האקורדים');if(d){d.artist='שיר לדוגמה';d.upd=Date.now();sv()}}
+const demoSong=()=>({id:DEMO_ID,title:'ברוכים הבאים',artist:'שיר לדוגמה',link:'',dir:'rtl',bpm:90,dv:2,upd:Date.now(),lines:JSON.parse(JSON.stringify(DEMO_LINES))});
+const DEMO_LINES=[{"t": "", "c": {}, "ty": "c", "x": ["Am", "F", "C", "G"], "lab": "פתיחה"}, {"t": "", "c": {}, "ty": "c", "x": [], "lab": "בית"}, {"t": "הכל מתחיל בדף לבן ושקט", "c": {"0": "Am", "18": "F"}}, {"t": "מדביקים מילים ובונים לאט לאט", "c": {"0": "C", "25": "G"}}, {"t": "לוחצים על אות ובוחרים אקורד", "c": {"0": "Am", "22": "F"}}, {"t": "ומה שהיה רק טקסט מתחיל לנגן", "c": {"0": "C", "9": "G", "23": "Am"}}, {"t": "", "c": {}, "ty": "c", "x": [], "lab": "פזמון"}, {"t": "תלחץ על אקורד, תראה איך מנגנים", "c": {"0": "F", "24": "G"}}, {"t": "בפסנתר, בגיטרה או ביוקללי", "c": {"0": "C", "18": "Am"}}, {"t": "תשנה את הטון, תגדיל את המילים", "c": {"0": "F", "23": "G"}}, {"t": "וכל שיר כאן הופך לשלי", "c": {"0": "C", "8": "G", "17": "C"}}, {"t": "", "c": {}, "ty": "c", "x": [], "lab": "בית"}, {"t": "הפעל גלילה והשיר זורם לבד", "c": {"0": "Am", "22": "F"}}, {"t": "המטרונום שומר לך על הקצב", "c": {"0": "C", "20": "G"}}, {"t": "ואם בא לך לצלם את עצמך מנגן", "c": {"0": "Am", "23": "F"}}, {"t": "המצלמה מחכה, רק תלחץ ותתחיל", "c": {"0": "C", "13": "G", "21": "Am"}}, {"t": "", "c": {}, "ty": "c", "x": [], "lab": "פזמון"}, {"t": "תלחץ על אקורד, תראה איך מנגנים", "c": {"0": "F", "24": "G"}}, {"t": "בפסנתר, בגיטרה או ביוקללי", "c": {"0": "C", "18": "Am"}}, {"t": "תשנה את הטון, תגדיל את המילים", "c": {"0": "F", "23": "G"}}, {"t": "וכל שיר כאן הופך לשלי", "c": {"0": "C", "8": "G", "17": "C"}}, {"t": "", "c": {}, "ty": "c", "x": [], "lab": "בית"}, {"t": "שמור את האהובים עם לב קטן", "c": {"0": "Am", "22": "F"}}, {"t": "סדר בתיקיות, כל שיר במקומו", "c": {"0": "C", "20": "G"}}, {"t": "חפש לפי שם, אמן או מילה", "c": {"0": "Am", "19": "F"}}, {"t": "והשיר שרצית כבר מחכה לך כאן", "c": {"0": "C", "12": "G", "24": "Am"}}, {"t": "", "c": {}, "ty": "c", "x": ["Am", "F", "C", "G"], "lab": "סיום"}, {"t": "עכשיו תורך: לחץ על + והוסף שיר", "c": {"0": "F", "27": "G", "30": "C"}}];
+function fixDemoArtist(){const d=S.find(x=>x.id===DEMO_ID);if(d&&(d.dv||1)<2){const n=demoSong();d.artist=n.artist;d.lines=n.lines;d.dv=2;d.upd=Date.now();sv()}}
 function addDemo(force){
   if(S.some(x=>x.id===DEMO_ID))return false;
   if(!force&&DEL[DEMO_ID]!=null)return false;
