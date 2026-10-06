@@ -88,8 +88,15 @@ textarea.f{min-height:300px;line-height:1.6}
 .flw:last-child .fl{left:auto;right:0;transform:none}.flw:first-child .fl{left:0;transform:none}
 .sar[hidden]{display:none}
 .pside{flex:0 0 88px;display:flex;gap:6px;align-items:center}.pside.r{justify-content:flex-end}
-.hdr{padding:10px 0 4px}
+.hdr{padding:0 0 4px}
 .icr{display:flex;gap:6px;align-items:center;min-width:0}
+.stk{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);padding:10px 0 8px;margin:0 -14px;padding-inline:14px}
+.stk.sh{box-shadow:0 1px 0 var(--bd)}
+.mt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;font-size:1rem;opacity:0;transition:opacity .2s;padding:0 4px}
+.stk.sh .mt{opacity:1}
+@media (prefers-reduced-motion:reduce){.mt{transition:none}}
+.tvn{background:none;border:0;padding:4px 2px;min-width:2.2em;text-align:center;cursor:pointer;direction:ltr;unicode-bidi:isolate;font-weight:600;color:var(--fg)}
+.vctl .g.tone{gap:2px}
 .icr .b.ic{padding:4px 7px}
 html{overflow-x:clip}
 .trow{display:flex;align-items:center;gap:8px;margin:12px 0 0}.trow .sti{flex:1;margin:0;min-width:0}
@@ -463,16 +470,23 @@ function folderPicker(s,after){
   document.addEventListener('keydown',kd,true);dlgClose=()=>done();draw();
 }
 function newFolder(after){dlg({title:'תיקייה חדשה',input:'',max:40,ok:'צור',icons:true}).then(n=>{if(!n)return;const f={id:Date.now(),name:n.slice(0,40)};FOL.push(f);folChanged();if(after)after(f)})}
+let titleObs=null;
+function stickTitle(bar,h1,mt){
+  if(titleObs)titleObs.disconnect();
+  if(!('IntersectionObserver' in window))return;
+  titleObs=new IntersectionObserver(es=>{es.forEach(e=>{const on=!e.isIntersecting&&e.boundingClientRect.top<0;bar.classList.toggle('sh',on);mt.setAttribute('aria-hidden',on?'false':'true')})},{threshold:0});
+  titleObs.observe(h1);
+}
 function list(){
   const hdr=el('div','hdr'),icr=el('div','icr');
   icr.append(ibt('film',()=>{galSong=null;v='gal';render()},'b ic','הסרטונים שלי'),ibt('gear',()=>{v='set';render()},'b ic','הגדרות'));
-  icr.prepend(el('span','sp'));
+  const mt0=el('span','mt','ספר האקורדים שלי');mt0.setAttribute('aria-hidden','true');icr.prepend(mt0);icr.classList.add('stk');
   if(acct){const cb=ibt('cloud',()=>{if(cloudSt==='need'||cloudSt==='err')signIn(false);else{v='set';render()}},'b ic cld');cb.id='cloudBtn';icr.insertBefore(cb,icr.children[1]||null);paintCloud()}
-  hdr.append(icr,el('h1','sti','ספר האקורדים שלי'));
+  const h10=el('h1','sti','ספר האקורדים שלי');hdr.append(h10);
   if(myName())hdr.append(el('p','hello','שלום, '+myName()));
   let nx=false;try{nx=localStorage.getItem('chords_nudge')==='1'}catch(e){}
   if(!acct&&S.length>=3&&!nx){const nb=el('div','nudge');nb.append(el('span','','השירים שלך שמורים רק במכשיר הזה. התחבר כדי לגבות אותם.'),btn('התחבר',()=>{v='wel';render()},'b pr'),btn('✕',()=>{try{localStorage.setItem('chords_nudge','1')}catch(e){}nb.remove()},'b px','סגור'));hdr.append(nb)}
-  A.append(hdr);
+  A.append(icr,hdr);stickTitle(icr,h10,mt0);
   A.append(ibt('plus',()=>{cur={id:Date.now(),title:'',artist:'',link:'',dir:'rtl',lines:[],raw:'',fo:fSel!=null?[fSel]:undefined};v='ed';tab='l';pk=null;render()},'fab','שיר חדש'));
   if(!S.length){A.append(el('div','em','אין עדיין שירים. לחץ על + כדי להוסיף שיר.'));return}
   if(fSel!=null&&!FOL.some(f=>f.id===fSel))fSel=null;
@@ -612,11 +626,11 @@ function view(){
   if(safeLink(s.link)){const a=el('a','b ic');a.innerHTML=IB.listen;a.href=s.link;a.target='_blank';a.rel='noopener noreferrer';a.setAttribute('aria-label','האזן לשיר');lnk=a}
   const sar=el('div','sar'),cpt=el('span','cpt');
   sar.append(el('span','',s.artist||''),cpt);
-  hdr.append(icr);
+  icr.classList.add('stk');const mt1=el('span','mt',s.title);mt1.setAttribute('aria-hidden','true');icr.append(mt1);
   if(inc){const bn=el('div','bnr');bn.append(el('span','','שיר ששותף איתך'),btn('הוסף לשירים שלי',()=>{
     if(!acct&&!welSeen()){pend=s;v='wel';render();return}
     s.upd=s.upd||Date.now();mergeSongs([s]);incoming=null;cur=S.find(x=>x.id===s.id)||s;t=cur.tp||0;toast('השיר נוסף לשירים שלך');render()},'b pr'));hdr.append(bn)}
-  const trw=el('div','trow');trw.append(el('h1','sti',s.title));if(!inc)trw.append(heartBtn(s,'hl hrt'));
+  const trw=el('div','trow'),h11=el('h1','sti',s.title);trw.append(h11);if(!inc)trw.append(heartBtn(s,'hl hrt'));
   hdr.append(trw,sar);
   const bd=el('div','bd'),tb=el('div','tb'),r1=el('div','tr1'),r2=el('div','tr2');
   const draw=()=>{bd.textContent='';bd.style.fontSize=fs+'px';s.lines.forEach((l,i)=>bd.append(rl(l,s.dir,false,i)));fix(bd)};
@@ -631,7 +645,7 @@ function view(){
     [...mn.children].forEach((b,n)=>b.classList.toggle('on',['p','g','u'][n]===ins));
     cpt.textContent=s.cp>0?'קאפו '+s.cp+(ins==='p'?' כלול באקורדים':''):'';
     sar.hidden=!s.artist&&!(s.cp>0)};
-  const tv=el('button','b v'),sh=()=>{tv.textContent=t>0?'+'+t:''+t};
+  const tv=el('button','tvn'),sh=()=>{tv.textContent=t>0?'+'+t:t<0?'−'+(-t):'0'};
   const tc=n=>{t=n;s.tp=t||undefined;if(!inc)s.upd=Date.now();sh();draw();sv()};
   tv.onclick=()=>tc(0);tv.setAttribute('aria-label','איפוס טון');sh();
   const play=btn('',()=>{timer?stop():go();upd()},'b pr ic sq');
@@ -667,11 +681,11 @@ function view(){
   const g=(lbl,...x)=>{const e=el('div','g');e.append(el('span','',lbl),...x);return e};
   const ctl=el('div','vctl');
   ctl.append(dd,
-    g('טון',btn('−',()=>tc(t-1<-5?6:t-1)),tv,btn('+',()=>tc(t+1>6?-5:t+1))),
+    (e=>{e.classList.add('tone');return e})(g('טון',btn('−',()=>tc(t-1<-5?6:t-1)),tv,btn('+',()=>tc(t+1>6?-5:t+1)))),
     g('גודל',btn('A−',()=>{fs=Math.max(12,fs-2);draw()}),btn('A+',()=>{fs=Math.min(60,fs+2);draw()})));
   hdr.append(ctl);
   r1.append(play,sl,el('span','sp'),md);if(cdW)r1.append(cdW);if(lnk)r1.append(lnk);
-  tb.append(r1);A.append(hdr,bd,tb);ui();upd();draw();
+  tb.append(r1);A.append(icr,hdr,bd,tb);stickTitle(icr,h11,mt1);ui();upd();draw();
 }
 
 const IB={
