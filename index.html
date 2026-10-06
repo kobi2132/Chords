@@ -73,7 +73,9 @@ textarea.f{min-height:300px;line-height:1.6}
 .er{display:flex;align-items:flex-start;gap:6px}.er>.ln,.er>.cr{flex:1;min-width:0}
 .gap{flex:none;width:24px;height:24px;margin-top:.7em;border-radius:50%;border:1px solid var(--bd);background:var(--cd);color:var(--mut);opacity:.65;font-size:15px;line-height:1;cursor:pointer;padding:0}
 .gap:hover{opacity:1}
-.cb,.tb{position:fixed;inset-inline:0;bottom:0;background:var(--cd);border-top:1px solid var(--bd);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));z-index:9}
+.cb,.tb{position:fixed;inset-inline:0;bottom:0;}
+.cb{bottom:var(--kb,0px)}
+.cb,.tb{position:fixed;inset-inline:0;background:var(--cd);border-top:1px solid var(--bd);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));z-index:9}
 .cb{height:calc(236px + env(safe-area-inset-bottom,0px));box-sizing:border-box;display:flex;flex-direction:column;gap:2px}
 .cb.m1{overflow-y:auto}
 .cb.m2{overflow:visible;justify-content:space-evenly}
@@ -126,7 +128,7 @@ html{overflow-x:clip}
 .frow{display:flex;align-items:center;gap:2px}.frow .mi{flex:1;text-align:start}
 .pin{background:none;border:0;color:var(--mut);padding:6px 8px;cursor:pointer;opacity:.55}.pin.on{color:var(--ch);opacity:1}
 .pin svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linejoin:round}.pin.on svg{fill:currentColor}
-.dlgw{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}
+.dlgw{position:fixed;inset-inline:0;top:var(--vvt,0px);height:var(--vvh,100%);z-index:50;background:rgba(0,0,0,.45);display:flex;align-items:flex-start;justify-content:center;padding:max(16px,min(12vh,80px)) 16px 16px;box-sizing:border-box;overflow-y:auto}
 .dlg{background:var(--cd);color:var(--fg);border:1px solid var(--bd);border-radius:14px;padding:18px;width:100%;max-width:360px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
 .dlg h3{margin:0 0 8px;font-size:1.1rem}.dlg p{margin:0 0 10px;color:var(--mut);font-size:.95rem}
 .dlg .f{margin:6px 0 14px}.dlgb{display:flex;gap:8px;justify-content:flex-start}
@@ -427,10 +429,10 @@ function dlg(o){return new Promise(res=>{
   const done=v2=>{w.remove();document.removeEventListener('keydown',kd,true);dlgClose=null;res(v2)};
   const ok=()=>{if(inp&&!o.ro){const x=inp.value.trim();if(!x){inp.focus();return}done(x)}else done(o.check?{checked:!!(cb&&cb.checked)}:true)};
   const kd=e=>{if(e.key==='Escape'){e.preventDefault();done(null)}else if(e.key==='Enter'){e.preventDefault();ok()}};
-  const okb=btn(o.ok||'אישור',ok,'b '+(o.danger?'danger':'pr'));
+  const okb=o.icons?ibt('ok',ok,'b ic '+(o.danger?'danger':'pr'),o.ok||'אישור'):btn(o.ok||'אישור',ok,'b '+(o.danger?'danger':'pr'));
   if(o.check){const lb=el('label','chk');cb=el('input');cb.type='checkbox';lb.append(cb,el('span','',o.check.label));d.append(lb);
     cb.onchange=()=>{okb.textContent=cb.checked?o.check.ok:(o.ok||'אישור');okb.className='b '+(cb.checked||o.danger?'danger':'pr')}}
-  const b=el('div','dlgb');b.append(okb,btn(o.cancel||'ביטול',()=>done(null),'b'));
+  const b=el('div','dlgb');b.append(okb,o.icons?ibt('close',()=>done(null),'b ic',o.cancel||'ביטול'):btn(o.cancel||'ביטול',()=>done(null),'b'));
   d.append(b);w.append(d);w.onclick=e=>{if(e.target===w)done(null)};document.body.append(w);
   document.addEventListener('keydown',kd,true);dlgClose=done;
   setTimeout(()=>{if(inp){inp.focus();inp.select()}else b.firstChild.focus()},30);
@@ -452,11 +454,11 @@ function folderPicker(s,after){
       r.append(c,el('span','n',f.name));pl.append(r)})};
   const done=()=>{w.remove();document.removeEventListener('keydown',kd,true);dlgClose=null;if(after)after()};
   const kd=e=>{if(e.key==='Escape'){e.preventDefault();done()}};
-  const b=el('div','dlgb');b.append(btn('סיום',done,'b pr'));
+  const b=el('div','dlgb');b.append(ibt('ok',done,'b ic pr','סיום'));
   d.append(nfr,pl,b);w.append(d);w.onclick=e=>{if(e.target===w)done()};document.body.append(w);
   document.addEventListener('keydown',kd,true);dlgClose=()=>done();draw();
 }
-function newFolder(after){dlg({title:'תיקייה חדשה',input:'',max:40,ok:'צור'}).then(n=>{if(!n)return;const f={id:Date.now(),name:n.slice(0,40)};FOL.push(f);folChanged();if(after)after(f)})}
+function newFolder(after){dlg({title:'תיקייה חדשה',input:'',max:40,ok:'צור',icons:true}).then(n=>{if(!n)return;const f={id:Date.now(),name:n.slice(0,40)};FOL.push(f);folChanged();if(after)after(f)})}
 function list(){
   const hdr=el('div','hdr'),icr=el('div','icr');
   icr.append(ibt('film',()=>{galSong=null;v='gal';render()},'b ic','הסרטונים שלי'),ibt('gear',()=>{v='set';render()},'b ic','הגדרות'));
@@ -499,7 +501,7 @@ function list(){
     const ad=el('div','dd'),am=el('div','mn dn'),abt=ibt('dots',()=>{am.hidden=!am.hidden;if(!am.hidden)watchMenu(ad,am)},'b ic','אפשרויות תיקייה');am.hidden=true;
     const cl=()=>{am.hidden=true;if(am._done)am._done()};
     const m1=el('button','mi','הוסף שירים');m1.onclick=()=>{cl();v='fadd';render()};
-    const m2=el('button','mi','שנה שם');m2.onclick=()=>{cl();dlg({title:'שינוי שם תיקייה',input:cf.name,max:40,ok:'שמור'}).then(n=>{if(n&&n!==cf.name){cf.name=n.slice(0,40);folChanged();render()}})};
+    const m2=el('button','mi','שנה שם');m2.onclick=()=>{cl();dlg({title:'שינוי שם תיקייה',input:cf.name,max:40,ok:'שמור',icons:true}).then(n=>{if(n&&n!==cf.name){cf.name=n.slice(0,40);folChanged();render()}})};
     const m3=el('button','mi','מחק תיקייה');m3.onclick=()=>{cl();dlg({title:'מחיקת תיקייה',text:'למחוק את התיקייה "'+cf.name+'"? השירים עצמם לא יימחקו.',ok:'מחק',danger:true}).then(ok=>{if(ok){FOL=FOL.filter(x=>x.id!==cf.id);fSel=null;folChanged();render()}})};
     am.append(m1,m2,m3);ad.append(abt,am);fr0.append(ad);
   }
@@ -561,7 +563,7 @@ function view(){
     if(inArtifact){lk.disabled=true}
     else lk.onclick=async()=>{sm.hidden=true;try{const u=await songLink(s);
       if(navigator.share){try{await navigator.share({title:s.title,url:u});return}catch(e){if(e&&e.name==='AbortError')return}}
-      try{await navigator.clipboard.writeText(u);toast('הקישור הועתק')}catch(e){dlg({title:'קישור לשיר',text:'העתק את הקישור ושלח אותו:',input:u,ro:true,ok:'סגור',cancel:'ביטול'})}}catch(e){toast('לא הצלחתי ליצור קישור')}};
+      try{await navigator.clipboard.writeText(u);toast('הקישור הועתק')}catch(e){dlg({title:'קישור לשיר',text:'העתק את הקישור ושלח אותו:',input:u,ro:true,ok:'סגור',cancel:'ביטול',icons:true})}}catch(e){toast('לא הצלחתי ליצור קישור')}};
     const fb=el('button','mi','שלח כקובץ');
     fb.onclick=async()=>{sm.hidden=true;const nm=(s.title||'שיר').replace(/[\\/:*?"<>|]/g,'').trim().slice(0,80)+'.json';
       const r=await saveFile(nm,JSON.stringify({app:'chords',v:1,songs:[strip(s)]}),true);
@@ -683,6 +685,7 @@ const IB={
  pin:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3.5h6l-1 5.5 3.5 3.5v1.5h-11V12.5L10 9z"/><path d="M12 14v6.5"/></svg>',
  folderMinus:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.2l2 2.2h8.8A1.5 1.5 0 0 1 21 8.7v9.8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M9 13.5h6"/></svg>',
  folderPlus:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.2l2 2.2h8.8A1.5 1.5 0 0 1 21 8.7v9.8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/><path d="M9 13.5h6M12 10.5v6"/></svg>',
+ close:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke-width="2.2"/></svg>',
  share:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/></svg>',
  back:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
  ok:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-width="2.4"/></svg>',
@@ -1192,6 +1195,9 @@ if(oauthBack){
 }else if(oauthErr){setTimeout(()=>toast('ההתחברות בוטלה'),300);if(pend&&!welSeen())v='wel'}
 if(!oauthBack&&!/^#s=/.test(location.hash)&&!acct&&!welSeen())v='wel';
 if(acct){if(!isIOS)loadGIS().catch(()=>{});if(!tokOk())setCloud('need')}
+(function(){const vv=window.visualViewport;if(!vv)return;const st=document.documentElement.style;
+  const upd=()=>{st.setProperty('--vvh',vv.height+'px');st.setProperty('--vvt',vv.offsetTop+'px');st.setProperty('--kb',Math.max(0,innerHeight-vv.height-vv.offsetTop)+'px')};
+  vv.addEventListener('resize',upd);vv.addEventListener('scroll',upd);upd()})();
 render();
 (async()=>{try{const sh=await readLink();if(sh){incoming=sh;cur=sh;t=0;v='vw';try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}render()}}catch(e){}})();
 </script>
