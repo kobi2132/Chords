@@ -161,6 +161,12 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 .seg .a1{font-size:13px;font-weight:700}.seg .a2{font-size:20px;font-weight:700}
 .sgi{height:40px;border-radius:12px;padding:0 10px}
 .vctl{gap:8px 10px}
+.pdfbox,.pdfbox *{font-family:PdfAlef,Arial,sans-serif!important}
+.pdfbox .ch,.pdfbox .cx,.pdfbox .cc{color:#1e3a8a!important}.pdfbox .hd{color:#555!important}.pdfbox .hy{color:#888!important}
+.pdfbox .pdfh{margin-bottom:16px}.pdfbox .pt{font-size:20px;font-weight:700}.pdfbox .pt.big{font-size:30px;margin-top:140px}
+.pdfbox .pm{font-size:11px;color:#555;margin-top:3px}
+.pdfbox .toc{display:flex;justify-content:space-between;gap:12px;font-size:12px;padding:6px 0;border-bottom:1px solid #ddd}.pdfbox .tn{direction:ltr;color:#555}
+.pdfbox .pfoot{font-size:8px;color:#888}
 .hello{color:var(--mut);margin:2px 0 12px;font-size:.95rem}
 .legal{font-size:.8rem;color:var(--mut);margin:10px 0 26px}.legal a{color:var(--ch)}
 .skip{background:none;border:0;color:var(--fg);text-decoration:underline;cursor:pointer;font-size:.95rem;padding:8px}
@@ -532,7 +538,10 @@ function list(){
     const m1=el('button','mi','הוסף שירים');m1.onclick=()=>{cl();v='fadd';render()};
     const m2=el('button','mi','שנה שם');m2.onclick=()=>{cl();dlg({title:'שינוי שם תיקייה',input:cf.name,max:40,ok:'שמור',icons:true}).then(n=>{if(n&&n!==cf.name){cf.name=n.slice(0,40);folChanged();render()}})};
     const m3=el('button','mi','מחק תיקייה');m3.onclick=()=>{cl();dlg({title:'מחיקת תיקייה',text:'למחוק את התיקייה "'+cf.name+'"? השירים עצמם לא יימחקו.',ok:'מחק',danger:true}).then(ok=>{if(ok){FOL=FOL.filter(x=>x.id!==cf.id);fSel=null;folChanged();render()}})};
-    am.append(m1,m2,m3);ad.append(abt,am);fr0.append(ad);
+    const m4=el('button','mi','שלח תיקייה');m4.onclick=()=>{cl();const songs=S.filter(x=>(x.fo||[]).includes(cf.id)).map(x=>Object.assign(strip(x),{fo:[cf.id]}));if(!songs.length){toast('התיקייה ריקה');return}
+      saveFile(fname(cf.name)+'.json',JSON.stringify({app:'chords',v:1,folders:[{id:cf.id,name:cf.name}],songs}),true).then(r=>{if(r==='fail')toast('לא הצלחתי ליצור את הקובץ כאן')})};
+    const m5=el('button','mi','הורד שירון PDF');m5.onclick=()=>{cl();bookPdfFlow(cf)};
+    am.append(m1,m4,m5,m2,m3);ad.append(abt,am);fr0.append(ad);
   }
   fr0.append(ibt('folderPlus',()=>newFolder(f=>{fSel=f.id;render()}),'b ic','תיקייה חדשה'));
   A.append(fr0);
@@ -588,15 +597,13 @@ function view(){
       sm.hidden=!sm.hidden;
       if(!sm.hidden){watchMenu(sd,sm)}},'b ic','שתף שיר');
     sm.hidden=true;
-    const lk=el('button','mi','שתף קישור');
+    const lk=el('button','mi','שתף שיר');
     if(inArtifact){lk.disabled=true}
     else lk.onclick=async()=>{sm.hidden=true;try{const u=await songLink(s);
       if(navigator.share){try{await navigator.share({title:s.title,url:u});return}catch(e){if(e&&e.name==='AbortError')return}}
       try{await navigator.clipboard.writeText(u);toast('הקישור הועתק')}catch(e){dlg({title:'קישור לשיר',text:'העתק את הקישור ושלח אותו:',input:u,ro:true,ok:'סגור',cancel:'ביטול',icons:true})}}catch(e){toast('לא הצלחתי ליצור קישור')}};
-    const fb=el('button','mi','שלח כקובץ');
-    fb.onclick=async()=>{sm.hidden=true;const nm=(s.title||'שיר').replace(/[\\/:*?"<>|]/g,'').trim().slice(0,80)+'.json';
-      const r=await saveFile(nm,JSON.stringify({app:'chords',v:1,songs:[strip(s)]}),true);
-      if(r==='fail')toast('לא הצלחתי ליצור את הקובץ כאן')};
+    const fb=el('button','mi','הורד PDF');
+    fb.onclick=()=>{sm.hidden=true;if(sm._done)sm._done();songPdfFlow(s)};
     sm.append(lk,fb);
     if(inArtifact)sm.append(el('div','mh','שיתוף בקישור יעבוד אחרי המעבר לאחסון משלך'));
     sd.append(sb,sm);icr.append(sd);
@@ -1033,6 +1040,101 @@ function accountSection(){
   return s;
 }
 
+/* ---------- PDF ---------- */
+let pdfLib=null,pdfFonts=null;
+const PW=595,PH=842,MX=40,MT=46,MB=58,CW=PW-2*MX,CH=PH-MT-MB;
+const loadScript=src=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.append(s)});
+const ab2b64=buf=>{let s='';const u=new Uint8Array(buf);for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
+async function pdfReady(){
+  if(!pdfLib){await loadScript('vendor/jspdf.umd.min.js');pdfLib=window.jspdf.jsPDF}
+  if(!pdfFonts){
+    const [r,b]=await Promise.all(['fonts/Alef-Regular.ttf','fonts/Alef-Bold.ttf'].map(u=>fetch(u).then(x=>{if(!x.ok)throw new Error('font');return x.arrayBuffer()})));
+    const f1=new FontFace('PdfAlef',r.slice(0),{weight:'400'}),f2=new FontFace('PdfAlef',b.slice(0),{weight:'700'});
+    await Promise.all([f1.load(),f2.load()]);document.fonts.add(f1);document.fonts.add(f2);
+    pdfFonts={r:ab2b64(r),b:ab2b64(b)};
+  }
+}
+function newDoc(){const d=new pdfLib({unit:'pt',format:'a4'});d.addFileToVFS('Alef-R.ttf',pdfFonts.r);d.addFont('Alef-R.ttf','Alef','normal');d.addFileToVFS('Alef-B.ttf',pdfFonts.b);d.addFont('Alef-B.ttf','Alef','bold');d.setFont('Alef','normal');return d}
+function pdfBox(){const b=el('div','pdfbox bd');b.dir='rtl';b.style.cssText='position:fixed;left:-20000px;top:0;width:'+CW+'px;font-size:13px;line-height:1.35;color:#111;background:#fff';document.body.append(b);return b}
+const ascC=document.createElement('canvas').getContext('2d'),ascM={};
+function ascent(sz,bold){const k=sz+'|'+bold;if(ascM[k]==null){ascC.font=(bold?'700 ':'400 ')+sz+'px PdfAlef';const m=ascC.measureText('אA');ascM[k]=m.fontBoundingBoxAscent||sz*.8}return ascM[k]}
+function drawEl(doc,node,xBase,yBase,yTarget){
+  const w=document.createTreeWalker(node,NodeFilter.SHOW_TEXT),rg=document.createRange();let n;
+  while((n=w.nextNode())){
+    const txt=n.nodeValue;if(!txt||!txt.trim())continue;
+    const par=n.parentElement,cs=getComputedStyle(par);if(cs.display==='none'||cs.visibility==='hidden')continue;
+    const sz=parseFloat(cs.fontSize),bold=parseInt(cs.fontWeight,10)>=600;
+    doc.setFont('Alef',bold?'bold':'normal');doc.setFontSize(sz);
+    const c=(cs.color.match(/[\d.]+/g)||[0,0,0]).map(Number);doc.setTextColor(c[0],c[1],c[2]);
+    const a=ascent(sz,bold);let off=0;
+    for(const ch of Array.from(txt)){const L=ch.length;
+      if(ch.trim()&&ch!=='→'){rg.setStart(n,off);rg.setEnd(n,off+L);const r=rg.getClientRects()[0];if(r&&r.width)doc.text(ch,MX+(r.left-xBase),yTarget+(r.top-yBase)+a)}
+      off+=L}
+  }
+}
+function paginate(box){
+  const base=box.getBoundingClientRect().top,ps=[...box.children].map(b=>{const r=b.getBoundingClientRect();return{b,top:r.top-base,bot:r.bottom-base}});
+  const pages=[];let cur=null,pt=0;
+  ps.forEach((p,i)=>{
+    let br=!cur||(p.bot-pt>CH&&cur.items.length);
+    if(!br&&p.b.classList.contains('sec')&&ps[i+1]&&ps[i+1].bot-pt>CH)br=true;
+    if(br){pt=cur?p.top:0;cur={top:pt,items:[]};pages.push(cur)}
+    cur.items.push(p);
+  });
+  return pages;
+}
+function drawPage(doc,box,pg){const r=box.getBoundingClientRect();pg.items.forEach(p=>drawEl(doc,p.b,r.left,r.top+pg.top,MT))}
+function footBox(){const b=pdfBox();const f=el('div','pfoot','נוצר באפליקציה: "ספר האקורדים שלי"');b.append(f);return b}
+function drawFoot(doc,fb,num){const r=fb.getBoundingClientRect();drawEl(doc,fb,r.left,r.top,PH-MB+26);if(num){doc.setFont('Alef','normal');doc.setFontSize(8);doc.setTextColor(136,136,136);doc.text(String(num),MX,PH-MB+26+ascent(8,false))}}
+function metaFor(s,sh,mine,pianoCapo){const m=[];if(s.artist)m.push(s.artist);if(s.cp>0)m.push('קאפו '+s.cp+(pianoCapo?' (כלול באקורדים)':''));const tp=mine?(s.tp||0):0;if(tp)m.push('טון '+(tp>0?'+':'−')+Math.abs(tp));return m}
+function songInto(box,s,sh,meta){
+  const hd=el('div','pdfh');hd.append(el('div','pt',s.title));if(meta.length)hd.append(el('div','pm',meta.join(' · ')));box.append(hd);
+  const sv0={cur,t,ins,v};cur=s;v='vw';t=sh;ins='g';
+  try{s.lines.forEach((l,i)=>box.append(rl(l,s.dir,false,i)))}finally{cur=sv0.cur;t=sv0.t;ins=sv0.ins;v=sv0.v}
+  fix(box);
+}
+function savePdf(doc,name){
+  const blob=doc.output('blob');
+  if(isIOS){const f=new File([blob],name,{type:'application/pdf'});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f]}).catch(e=>{if(!e||e.name!=='AbortError')dlBlob(blob,name)});return}}
+  dlBlob(blob,name);toast('ה-PDF ירד לתיקיית ההורדות',3000);
+}
+const boxes=[];const cleanBoxes=()=>{boxes.splice(0).forEach(b=>b.remove())};
+const mkBox=()=>{const b=pdfBox();boxes.push(b);return b};
+async function songPdf(s,mine){
+  try{toast('מכין PDF...',1500);await pdfReady();await document.fonts.ready;
+    const pc=mine&&ins==='p'&&s.cp>0,sh=mine?t+(ins==='p'?(s.cp||0):0):0;
+    const doc=newDoc(),box=mkBox();songInto(box,s,sh,metaFor(s,sh,mine,pc));
+    const fb=mkBox();fb.append(el('div','pfoot','נוצר באפליקציה: "ספר האקורדים שלי"'));
+    paginate(box).forEach((pg,i)=>{if(i)doc.addPage();drawPage(doc,box,pg);drawFoot(doc,fb,0)});
+    savePdf(doc,fname(s.title)+'.pdf');
+  }catch(e){toast('לא הצלחתי ליצור PDF. בדוק חיבור לאינטרנט ונסה שוב',3500)}finally{cleanBoxes()}
+}
+async function bookPdf(f,songs,mine){
+  try{toast('מכין שירון...',2000);await pdfReady();await document.fonts.ready;
+    const doc=newDoc(),fb=mkBox();fb.append(el('div','pfoot','נוצר באפליקציה: "ספר האקורדים שלי"'));
+    const its=songs.map(s=>{const box=mkBox(),pc=mine&&ins==='p'&&s.cp>0,sh=mine?(s.tp||0)+(ins==='p'?(s.cp||0):0):0;songInto(box,s,sh,metaFor(s,sh,mine,pc));return{s,box,pages:paginate(box)}});
+    const cover=nums=>{const box=mkBox(),hd=el('div','pdfh');hd.append(el('div','pt big',f.name),el('div','pm','שירון · '+songs.length+' שירים'));box.append(hd);
+      its.forEach((it,i)=>{const r=el('div','toc');r.append(el('span','',it.s.title+(it.s.artist?' · '+it.s.artist:'')),el('span','tn',nums?String(nums[i]):'000'));box.append(r)});return box};
+    let cb=cover(null),cp=paginate(cb);let p=cp.length+1;const nums=its.map(it=>{const n=p;p+=it.pages.length;return n});
+    cb=cover(nums);cp=paginate(cb);
+    let pn=0;const page=(box,pg)=>{if(pn)doc.addPage();pn++;drawPage(doc,box,pg);drawFoot(doc,fb,pn)};
+    cp.forEach(pg=>page(cb,pg));its.forEach(it=>it.pages.forEach(pg=>page(it.box,pg)));
+    savePdf(doc,fname(f.name)+'.pdf');
+  }catch(e){toast('לא הצלחתי ליצור את השירון. בדוק חיבור לאינטרנט ונסה שוב',3500)}finally{cleanBoxes()}
+}
+function songPdfFlow(s){
+  const sh=t+(ins==='p'?(s.cp||0):0);
+  if(!sh){songPdf(s,false);return}
+  const lbl=t?'הטון שלי ('+(t>0?'+':'−')+Math.abs(t)+')':'כמו במסך (קאפו כלול)';
+  dlg({title:'איזה טון להוריד?',text:'אפשר להוריד את השיר כמו שהוא מוצג אצלך, או עם האקורדים המקוריים.',alt:lbl,ok:'טון מקורי',cancel:'ביטול'}).then(r=>{if(r==='alt')songPdf(s,true);else if(r)songPdf(s,false)});
+}
+function bookPdfFlow(f){
+  const songs=S.filter(x=>(x.fo||[]).includes(f.id)).sort((a,b)=>a.title.localeCompare(b.title,'he'));
+  if(!songs.length){toast('התיקייה ריקה');return}
+  if(!songs.some(s=>s.tp||(ins==='p'&&s.cp>0))){bookPdf(f,songs,false);return}
+  dlg({title:'איזה טונים להוריד?',text:'בחלק מהשירים שמרת טון אחר. אפשר להוריד את השירון עם הטונים שלך או עם האקורדים המקוריים.',alt:'הטונים שלי',ok:'טונים מקוריים',cancel:'ביטול'}).then(r=>{if(r==='alt')bookPdf(f,songs,true);else if(r)bookPdf(f,songs,false)});
+}
+
 function settings(){
   const top=el('div','bar');top.append(ibt('back',()=>{v='list';render()},'b ic','חזרה'),el('b','tt','הגדרות'));
   const sec=el('div','sec'),msg=el('div','hint');
@@ -1041,15 +1143,15 @@ function settings(){
     try{const txt=await f.text(),{arr,ins:i2}=parseBk(txt),r=mergeSongs(arr);
       try{const fo=JSON.parse(txt).folders;if(Array.isArray(fo)){let add=0;fo.forEach(x=>{if(x&&x.id!=null&&typeof x.name==='string'&&!FOL.some(y=>y.id===x.id)){FOL.push({id:x.id,name:x.name});add++}});if(add)folChanged()}}catch(e){}
       if(i2==='p'||i2==='g'||i2==='u'){ins=i2;prefIns=i2;savePrefs()}
-      msg.textContent='השחזור הסתיים: '+r.a+' שירים נוספו, '+r.u+' עודכנו'+(r.k?', '+r.k+' נשארו כמו שהם':'')+(r.bad?', '+r.bad+' לא נקראו':'')+'.'}
+      msg.textContent='הייבוא הסתיים: '+r.a+' שירים נוספו, '+r.u+' עודכנו'+(r.k?', '+r.k+' נשארו כמו שהם':'')+(r.bad?', '+r.bad+' לא נקראו':'')+'.'}
     catch(e){msg.textContent='הקובץ הזה לא נראה כמו גיבוי או שיר של האפליקציה.'}};
   const bb=btn('גבה את כל השירים',async()=>{
     if(!S.length){msg.textContent='אין עדיין שירים לגבות.';return}
     const d=new Date(),p2=n=>String(n).padStart(2,'0'),nm='chords-backup-'+d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())+'.json';
     const r=await saveFile(nm,JSON.stringify({app:'chords',v:1,date:d.toISOString(),ins:prefIns,folders:FOL,songs:S}),false);
     msg.textContent=r==='ok'?'הגיבוי נשמר ('+S.length+' שירים).':r==='declined'?'הגיבוי בוטל.':'לא הצלחתי לשמור את הקובץ כאן.'},'b pr');
-  const r=el('div','row');r.append(bb,btn('שחזר מגיבוי',()=>fi.click(),'b'));
-  sec.append(el('h2','sh','גיבוי ושחזור'),el('div','hint','הגיבוי שומר את כל השירים בקובץ אחד. בשחזור, שירים חדשים מתווספים, ושיר שקיים בשני המקומות נשמר בגרסה שנערכה אחרונה. כך טוענים גם שיר שקיבלת כקובץ.'),r,msg,fi);
+  const r=el('div','row');r.append(bb,btn('ייבוא קובץ (גיבוי או תיקייה)',()=>fi.click(),'b'));
+  sec.append(el('h2','sh','גיבוי ושחזור'),el('div','hint','הגיבוי שומר את כל השירים בקובץ אחד. בייבוא קובץ (גיבוי, או תיקייה שמישהו שלח לך), שירים חדשים מתווספים, ושיר שקיים בשני המקומות נשמר בגרסה שנערכה אחרונה.'),r,msg,fi);
   A.append(top,prefsSection(),accountSection(),sec);
 }
 
