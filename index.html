@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ספר האקורדים שלי</title>
+<title>אקורדי</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg">
 <script>try{var th=localStorage.getItem('chords_theme');if(th==='light'||th==='dark')document.documentElement.dataset.theme=th}catch(e){}</script>
 <style>
 :root{color-scheme:light dark}:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
@@ -127,7 +128,7 @@ textarea.f.nta{min-height:0;line-height:1.4;resize:vertical}
 .cpt+.bpt,.cpt:empty+.bpt{margin-inline-start:0}.cpt:empty+.bpt{margin-inline-start:auto}
 .mn.dn{bottom:auto;top:calc(100% + 6px)}
 .wel{max-width:420px;margin:0 auto;padding:48px 4px 40px;text-align:center}
-.wel h1{font-size:1.8rem;margin:0 0 8px}.wel .tag{color:var(--mut);margin:0 0 28px}
+.wel h1{font-size:1.8rem;margin:0 0 8px}.wlogo{width:88px;height:88px;display:block;margin:0 auto 14px}.wel .tag{color:var(--mut);margin:0 0 28px}
 .gbtn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 22px;border-radius:999px;background:var(--cd);color:var(--fg);border:1px solid var(--bd);font-size:1rem;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .gbtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
 .gbtn:focus-visible{outline:2px solid var(--ch);outline-offset:2px}
@@ -613,9 +614,9 @@ function stickTitle(bar,h1,mt){
 function list(){
   const hdr=el('div','hdr'),icr=el('div','icr');
   icr.append(ibt('film',()=>{galSong=null;v='gal';render()},'b ic','הסרטונים שלי'),ibt('gear',()=>{v='set';render()},'b ic','הגדרות'));
-  const mt0=el('span','mt','ספר האקורדים שלי');mt0.setAttribute('aria-hidden','true');icr.prepend(mt0);icr.classList.add('stk');
+  const mt0=el('span','mt','אקורדי');mt0.setAttribute('aria-hidden','true');icr.prepend(mt0);icr.classList.add('stk');
   if(acct){const cb=ibt('cloud',()=>{if(cloudSt==='need'||cloudSt==='err')signIn(false);else{v='set';render()}},'b ic cld');cb.id='cloudBtn';icr.insertBefore(cb,icr.children[1]||null);paintCloud()}
-  const h10=el('h1','sti','ספר האקורדים שלי');hdr.append(h10);
+  const h10=el('h1','sti','אקורדי');hdr.append(h10);
   if(myName())hdr.append(el('p','hello','שלום, '+myName()));
   let nx=false;try{nx=localStorage.getItem('chords_nudge')==='1'}catch(e){}
   if(!acct&&S.length>=3&&!nx){const nb=el('div','nudge');nb.append(el('span','','השירים שלך שמורים רק במכשיר הזה. התחבר כדי לגבות אותם.'),btn('התחבר',()=>{v='wel';render()},'b pr'),btn('✕',()=>{try{localStorage.setItem('chords_nudge','1')}catch(e){}nb.remove()},'b px','סגור'));hdr.append(nb)}
@@ -1124,7 +1125,7 @@ const legal=()=>{const p=el('p','legal');p.append('בהתחברות אתה מס�
 function welcome(){
   loadGIS().catch(()=>{});
   const w=el('div','wel');
-  w.append(el('h1','','ספר האקורדים שלי'),el('p','tag','המילים והאקורדים שלך, במקום אחד, בעברית ובאנגלית.'));
+  const lg=el('img','wlogo');lg.src='icon.svg';lg.alt='';w.append(lg,el('h1','','אקורדי'),el('p','tag','המילים והאקורדים שלך, במקום אחד, בעברית ובאנגלית.'));
   const g=btn('',()=>signIn(true),'gbtn');g.innerHTML=IB.cloud;g.append('התחבר עם Google');
   w.append(g,legal());
   w.append(btn('המשך ללא התחברות',()=>{setWel();v='onb';render()},'skip'));
@@ -1231,7 +1232,7 @@ function paginate(box,hf=()=>CH){
   return pages;
 }
 function drawPage(doc,box,pg){const r=box.getBoundingClientRect();pg.items.forEach(p=>drawEl(doc,p.b,r.left,r.top+pg.top,MT))}
-function footBox(){const b=pdfBox();const f=el('div','pfoot','נוצר באפליקציה: "ספר האקורדים שלי"');b.append(f);return b}
+function footBox(){const b=pdfBox();const f=el('div','pfoot','נוצר באפליקציה: "אקורדי"');b.append(f);return b}
 function drawFoot(doc,fb,num){const r=fb.getBoundingClientRect();drawEl(doc,fb,r.left,r.top,PH-MB+26);if(num){doc.setFont('Alef','normal');doc.setFontSize(8);doc.setTextColor(136,136,136);doc.text(String(num),MX,PH-MB+26+ascent(8,false))}}
 function metaFor(s,sh,mine,pianoCapo){const m=[];if(s.artist)m.push(s.artist);if(s.cp>0)m.push('קאפו '+s.cp+(pianoCapo?' (כלול באקורדים)':''));const tp=mine?(s.tp||0):0;if(tp)m.push('טון '+(tp>0?'+':'−')+Math.abs(tp));if(s.bpm)m.push(s.bpm+' BPM');if(pdfSimp)m.push('אקורדים מפושטים');return m}
 function songInto(box,s,sh,meta,noHead){
@@ -1273,14 +1274,14 @@ async function songPdf(s,mine,simp,tone){
   try{toast('מכין PDF...',1500);await pdfReady();await document.fonts.ready;pdfSimp=!!simp;if(tone==null)tone=t;
     const pc=mine&&ins==='p'&&s.cp>0,sh=mine?tone+(ins==='p'?(s.cp||0):0):0;
     const doc=newDoc(),L=songLayout(s,sh,metaFor(s,sh,mine,pc));
-    const fb=mkBox();fb.append(el('div','pfoot','נוצר באפליקציה: "ספר האקורדים שלי"'));
+    const fb=mkBox();fb.append(el('div','pfoot','נוצר באפליקציה: "אקורדי"'));
     for(let i=0;i<L.n;i++){if(i)doc.addPage();L.draw(doc,i);drawFoot(doc,fb,0)}
     savePdf(doc,fname(s.title)+'.pdf');
   }catch(e){toast('לא הצלחתי ליצור PDF. בדוק חיבור לאינטרנט ונסה שוב',3500)}finally{cleanBoxes();pdfSimp=null}
 }
 async function bookPdf(f,songs,mine,simp){
   try{toast('מכין שירון...',2000);await pdfReady();await document.fonts.ready;
-    const doc=newDoc(),fb=mkBox();fb.append(el('div','pfoot','נוצר באפליקציה: "ספר האקורדים שלי"'));
+    const doc=newDoc(),fb=mkBox();fb.append(el('div','pfoot','נוצר באפליקציה: "אקורדי"'));
     const its=songs.map(s=>{const pc=mine&&ins==='p'&&s.cp>0,sh=mine?(s.tp||0)+(ins==='p'?(s.cp||0):0):0;pdfSimp=!!(simp&&sesSimp[s.id]);try{return{s,L:songLayout(s,sh,metaFor(s,sh,mine,pc))}}finally{pdfSimp=null}});
     const cover=nums=>{const box=mkBox(),hd=el('div','pdfh');hd.append(el('div','pt big',f.name),el('div','pm','שירון · '+songs.length+' שירים'));box.append(hd);
       its.forEach((it,i)=>{const r=el('div','toc');r.append(el('span','',it.s.title+(it.s.artist?' · '+it.s.artist:'')),el('span','tn',nums?String(nums[i]):'000'));box.append(r)});return box};
