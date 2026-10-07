@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ספר האקורדים שלי</title>
 <style>
-:root{--bg:#f3f5f8;--fg:#111c27;--mut:#66727f;--ch:#3730a3;--cd:#fff;--bd:#d6dce4;--hl:#e0e7ff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10141b;--fg:#e8edf3;--mut:#93a0ad;--ch:#7dd3fc;--cd:#18202b;--bd:#2c3745;--hl:#1e3a5f}}
-:root[data-theme="dark"]{--bg:#10141b;--fg:#e8edf3;--mut:#93a0ad;--ch:#7dd3fc;--cd:#18202b;--bd:#2c3745;--hl:#1e3a5f}
+:root{--bg:#f3f5f8;--fg:#111c27;--mut:#66727f;--ch:#3730a3;--cd:#fff;--bd:#d6dce4;--hl:#e0e7ff;--gbg:#dcfce7;--gfg:#166534;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10141b;--fg:#e8edf3;--mut:#93a0ad;--ch:#7dd3fc;--cd:#18202b;--bd:#2c3745;--hl:#1e3a5f;--gbg:#143323;--gfg:#86efac}}
+:root[data-theme="dark"]{--bg:#10141b;--fg:#e8edf3;--mut:#93a0ad;--ch:#7dd3fc;--cd:#18202b;--bd:#2c3745;--hl:#1e3a5f;--gbg:#143323;--gfg:#86efac}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Segoe UI",Arial,"Noto Sans Hebrew",sans-serif;line-height:1.4}
 #app{max-width:760px;margin:0 auto;padding:0 14px 150px}
@@ -39,6 +39,11 @@ button,select,input,textarea{font:inherit;color:inherit}
 .f{display:block;width:100%;box-sizing:border-box;background:var(--cd);border:1px solid var(--bd);border-radius:8px;padding:9px;margin:8px 0}
 textarea.f{min-height:300px;line-height:1.6}
 .row{display:flex;gap:8px;align-items:center}.row .f{flex:1}
+.row.ctl{flex-wrap:wrap;margin:8px 0}.row.ctl>*{margin:0}.row.ctl .b{flex:none}
+.bpw{display:flex!important;align-items:center;flex:1 1 5.5em!important;min-width:5.5em;padding:0 8px!important;cursor:text}.bpw input{border:0;background:none;color:inherit;font:inherit;width:100%;min-width:0;padding:9px 0;outline:none;-moz-appearance:textfield}
+.bpw input::-webkit-outer-spin-button,.bpw input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}.bpw .sfx{color:var(--mut);font-size:.8em;flex:none;line-height:1;align-self:center}
+.bpw:focus-within{border-color:var(--ch)}
+.row.lkr .f{flex:2;min-width:0}.row.lkr .fpb{flex:1;min-width:0;width:auto;margin:8px 0;padding:9px 8px}.fpb .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tabs{display:flex;gap:6px;margin:10px 0}
 .hint{color:var(--mut);font-size:.9rem;margin:6px 0 14px}
 .ln{position:relative;margin:0 0 .15em;margin-inline-start:2.2em;line-height:1.35;min-height:1.2em}
@@ -112,7 +117,8 @@ html{overflow-x:clip}
 .sar{display:flex;align-items:center;gap:8px;color:var(--mut);font-size:.85rem;margin:2px 0 14px;min-height:1.2em}
 .cpt{margin-inline-start:auto;background:var(--hl);color:var(--ch);border-radius:6px;padding:1px 8px;font-size:.78rem}
 .cpt:empty{display:none}
-.bpt:empty{display:none}
+.bpt{background:var(--gbg);color:var(--gfg);border-radius:6px;padding:1px 8px;font-size:.78rem}.bpt:empty{display:none}
+.cpt+.bpt,.cpt:empty+.bpt{margin-inline-start:0}.cpt:empty+.bpt{margin-inline-start:auto}
 .mn.dn{bottom:auto;top:calc(100% + 6px)}
 .wel{max-width:420px;margin:0 auto;padding:48px 4px 40px;text-align:center}
 .wel h1{font-size:1.8rem;margin:0 0 8px}.wel .tag{color:var(--mut);margin:0 0 28px}
@@ -737,7 +743,7 @@ function view(){
   }
   if(safeLink(s.link)){const a=el('a','b ic');a.innerHTML=IB.listen;a.href=s.link;a.target='_blank';a.rel='noopener noreferrer';a.setAttribute('aria-label','האזן לשיר');lnk=a}
   const sar=el('div','sar'),cpt=el('span','cpt');
-  const bpt=el('span','bpt');if(s.bpm){if(s.artist)bpt.append('· ');const x=el('span','',s.bpm+' BPM');x.dir='ltr';bpt.append(x)}sar.append(el('span','',s.artist||''),bpt,cpt);
+  const bpt=el('span','bpt',s.bpm?s.bpm+' BPM':'');sar.append(el('span','',s.artist||''),cpt,bpt);
   icr.classList.add('stk');const mt1=el('span','mt',s.title);mt1.setAttribute('aria-hidden','true');icr.append(mt1);
   if(inc){const bn=el('div','bnr');bn.append(el('span','','שיר ששותף איתך'),btn('הוסף לשירים שלי',()=>{
     if(!acct&&!welSeen()){pend=s;v='wel';render();return}
@@ -1188,7 +1194,7 @@ function footBox(){const b=pdfBox();const f=el('div','pfoot','נוצר באפל�
 function drawFoot(doc,fb,num){const r=fb.getBoundingClientRect();drawEl(doc,fb,r.left,r.top,PH-MB+26);if(num){doc.setFont('Alef','normal');doc.setFontSize(8);doc.setTextColor(136,136,136);doc.text(String(num),MX,PH-MB+26+ascent(8,false))}}
 function metaFor(s,sh,mine,pianoCapo){const m=[];if(s.artist)m.push(s.artist);if(s.cp>0)m.push('קאפו '+s.cp+(pianoCapo?' (כלול באקורדים)':''));const tp=mine?(s.tp||0):0;if(tp)m.push('טון '+(tp>0?'+':'−')+Math.abs(tp));if(s.bpm)m.push(s.bpm+' BPM');return m}
 function songInto(box,s,sh,meta,noHead){
-  if(!noHead){const hd=el('div','pdfh');hd.append(el('div','pt',s.title));if(meta.length){const pm=el('div','pm');meta.forEach((x,i)=>{if(i)pm.append(' · ');const q=el('span','',x);if(/^[\x20-\x7E]+$/.test(x))q.dir='ltr';pm.append(q)});hd.append(pm)};box.append(hd)}
+  if(!noHead){const hd=el('div','pdfh');hd.append(el('div','pt',s.title));if(meta.length){const pm=el('div','pm');meta.forEach((x,i)=>{if(i)pm.append(' · ');const q=el('span','',x);if(/^[\x20-\x7E]+$/.test(x)&&!/ BPM$/.test(x))q.dir='ltr';pm.append(q)});hd.append(pm)};box.append(hd)}
   const sv0={cur,t,ins,v};cur=s;v='vw';t=sh;ins='g';
   try{s.lines.forEach((l,i)=>box.append(rl(l,s.dir,false,i)))}finally{cur=sv0.cur;t=sv0.t;ins=sv0.ins;v=sv0.v}
   fix(box);
@@ -1365,26 +1371,28 @@ function edit(){
   A.append(top);
   const inp=(k,ph)=>{const i=el('input','f');i.placeholder=ph;i.value=s[k]||'';i.oninput=()=>{s[k]=i.value;if(k==='title')top.querySelector('.tt').textContent=i.value||'שיר חדש'};return i};
   const dt=btn(s.dir==='rtl'?'עב':'EN',()=>{s.dir=s.dir==='rtl'?'ltr':'rtl';s.dset=true;render()},'b','כיוון כתיבה: '+(s.dir==='rtl'?'עברית':'אנגלית')+' (לחץ להחלפה)');
-  const row=el('div','row');row.append(inp('title','שם השיר'),dt);
+  const row=el('div','row');row.append(inp('title','שם השיר'));
   const tb=el('div','tabs');
   [['l','מילים'],['c','אקורדים']].forEach(([k,x])=>tb.append(btn(x,()=>{
     if(k==='c')sync();else if(s.raw==null)s.raw=s.lines.filter(l=>l.ty!=='c').map(l=>l.t).join('\n');
     tab=k;pk=null;render()},'b'+(tab===k?' on':''))));
   const cs2=el('select','f');cs2.style.cssText='flex:none;width:auto';cs2.setAttribute('aria-label','קאפו');
-  for(let i=0;i<=12;i++){const o=el('option','',i?'קאפו '+i:'ללא קאפו');o.value=i;cs2.append(o)}
+  for(let i=0;i<=12;i++){const o=el('option','',i?'קאפו '+i:'קאפו –');o.value=i;cs2.append(o)}
   cs2.value=s.cp||0;cs2.onchange=()=>{s.cp=+cs2.value||undefined};
-  const bpi=el('input','f');bpi.type='number';bpi.inputMode='numeric';bpi.min=30;bpi.max=250;bpi.placeholder='BPM';bpi.style.cssText='flex:none;width:5.5em';bpi.setAttribute('aria-label','BPM (קצב)');
+  const bpi=el('input');bpi.type='number';bpi.inputMode='numeric';bpi.min=30;bpi.max=250;bpi.setAttribute('aria-label','BPM (קצב)');
+  const bpw=el('label','f bpw');bpw.append(bpi,el('span','sfx','BPM'));
   bpi.value=s.bpm||'';
   bpi.oninput=()=>{const n=parseInt(bpi.value,10);s.bpm=n>=30&&n<=250?n:undefined;delete sesB[s.id];delete sesS[s.id]};
   bpi.onblur=()=>{if(bpi.value==='')return;const n=parseInt(bpi.value,10);if(!(n>=30&&n<=250)){const c=isNaN(n)?'':Math.min(250,Math.max(30,n));bpi.value=c;s.bpm=c||undefined}};
-  const r2=el('div','row');r2.append(inp('artist','אמן (לא חובה)'),bpi,cs2);
+  const r2=el('div','row');r2.append(inp('artist','אמן (לא חובה)'));
   const ps=el('select','f');ps.style.cssText='flex:none;width:auto';ps.setAttribute('aria-label','פרטיות');
   [['pub','ציבורי'],['priv','פרטי']].forEach(([x,y])=>{const o=el('option','',y);o.value=x;ps.append(o)});
   ps.value=s.priv?'priv':'pub';ps.onchange=()=>{s.priv=ps.value==='priv'||undefined};
-  const r3=el('div','row');r3.append(inp('link','קישור לשיר (לא חובה)'),ps);
-  const fr=el('div','fsel'),fpb=btn('',()=>folderPicker(s,drawF),'b fpb');fr.append(fpb);
+  const r3=el('div','row ctl');r3.append(dt,bpw,cs2,ps);
+  const fr=el('div','row lkr'),fpb=btn('',()=>folderPicker(s,drawF),'b fpb');fr.append(inp('link','קישור לשיר (לא חובה)'),fpb);
   const drawF=()=>{const nm=FOL.filter(f=>(s.fo||[]).includes(f.id)).map(f=>f.name).sort((a,b)=>a.localeCompare(b,'he'));
-    fpb.innerHTML=IB.folderPlus;const n=el('span','n');n.append(el('span','','הוסף לתיקייה'),el('small','',nm.length?nm.join(', '):'לא בתיקייה'));fpb.append(n)};
+    fpb.innerHTML=IB.folderPlus;fpb.setAttribute('aria-label','הוסף לתיקייה'+(nm.length?' ('+nm.join(', ')+')':''));
+    const n=el('span','n',nm.length===0?'הוסף לתיקייה':nm.length===1?nm[0]:nm.length+' תיקיות');fpb.append(n)};
   drawF();
   A.append(row,r2,r3,fr,tb);
   if(tab==='l'){
