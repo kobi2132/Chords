@@ -235,6 +235,8 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 .pk{min-width:2.6em;direction:ltr;text-align:center}
 .us{background:var(--hl);border-color:var(--ch);color:var(--ch);font-weight:700}
 .sep{border:0;border-top:1px solid var(--bd);margin:8px 0}
+.msep{border:0;border-top:1px solid var(--bd);margin:3px 6px}.mi.dgr{color:#dc2626}.mi.dgr svg{stroke:#dc2626}.mi[disabled]{opacity:.45}
+.mi svg{flex:none}
 .pv{font-size:1.4rem;font-weight:700;color:var(--ch);direction:ltr;text-align:center}
 .ti{display:flex;flex-wrap:wrap;gap:8px 14px;justify-content:center;align-items:center;font-size:.9rem}
 .ti .g{display:flex;gap:6px;align-items:center}.v{min-width:2.2em;text-align:center}
@@ -674,11 +676,25 @@ function list(){
       n.append(el('div','',s.title),el('small','',s.artist||''));
       const fn2=fSel!=null?(FOL.find(f=>f.id===fSel)||{}).name:'';
       const killSong=()=>{S=S.filter(x=>x.id!==s.id);DEL[s.id]=Date.now();saveDel();sv();draw()};
-      const d=ibt(fSel!=null?'folderMinus':'trash',e=>{e.stopPropagation();
-        if(fSel==null)dlg({title:'מחיקת שיר',text:'למחוק את "'+s.title+'"? אי אפשר לבטל את הפעולה.',ok:'מחק',danger:true}).then(r=>{if(r)killSong()});
-        else dlg({title:'הסרה מהתיקייה',text:'להסיר את "'+s.title+'" מהתיקייה "'+fn2+'"? השיר יישאר בשירים שלך.',ok:'הסר מהתיקייה',check:{label:'מחק את השיר לגמרי (מכל התיקיות ומהשירים שלי)',ok:'מחק לגמרי'}}).then(r=>{if(!r)return;
-          if(r.checked)killSong();else{const a=(s.fo||[]).filter(x=>x!==fSel);s.fo=a.length?a:undefined;s.upd=Date.now();sv();draw()}})
-      },'b ic',fSel!=null?'הסר מהתיקייה':'מחק שיר');
+      // תפריט ⋯ לכל שיר
+      const d=el('div','dd'),dm=el('div','mn le');dm.hidden=true;
+      const db=ibt('dots',e=>{e.stopPropagation();
+        if(!dm.hidden){dm.hidden=true;if(dm._done)dm._done();return}
+        dm.textContent='';const cl=()=>{dm.hidden=true;if(dm._done)dm._done()};
+        dm.append(
+          mItem('edit','ערוך שיר',()=>{cl();cur=JSON.parse(JSON.stringify(s));v='ed';tab='c';pk=null;render()}),
+          mItem('folderPlus','הוסף לתיקייה',()=>{cl();folderPicker(s,()=>{s.upd=Date.now();sv();draw()})}),
+          mItem('copy','שכפל שיר',()=>{cl();dupSong(s);draw()}),
+          (b=>{if(inArtifact)b.disabled=true;return b})(mItem('share','שתף שיר',()=>{cl();shareSong(s)})),
+          mItem('pdf','הורד PDF',()=>{cl();songPdfFlow(s,s.tp||0)}),
+          el('hr','msep'));
+        if(fSel!=null)dm.append(mItem('folderMinus','הסר מהתיקייה',()=>{cl();
+          dlg({title:'הסרה מהתיקייה',text:'להסיר את "'+s.title+'" מהתיקייה "'+fn2+'"? השיר יישאר בשירים שלך.',ok:'הסר מהתיקייה'}).then(r=>{if(!r)return;
+            const a=(s.fo||[]).filter(x=>x!==fSel);s.fo=a.length?a:undefined;s.upd=Date.now();sv();draw()})}));
+        dm.append(mItem('trash','מחק שיר',()=>{cl();dlg({title:'מחיקת שיר',text:'למחוק את "'+s.title+'"'+(fSel!=null?' מכל התיקיות ומהשירים שלך':'')+'? אי אפשר לבטל את הפעולה.',ok:'מחק',danger:true}).then(r=>{if(r)killSong()})},'dgr'));
+        dm.classList.toggle('dn',d.getBoundingClientRect().bottom+330<innerHeight);
+        dm.hidden=false;watchMenu(d,dm)},'b ic','אפשרויות שיר');
+      d.append(db,dm);d.onclick=e=>e.stopPropagation();
       const hb=heartBtn(s,'b ic hrt');
       if(favOnly){const o=hb.onclick;hb.onclick=e=>{o(e);if(!s.fav)draw()}}
       c.append(n,hb,d);c.onclick=()=>{cur=s;t=s.tp||0;v='vw';render()};box.append(c);
@@ -710,13 +726,9 @@ function view(){
       sm.hidden=!sm.hidden;
       if(!sm.hidden){watchMenu(sd,sm)}},'b ic','שתף שיר');
     sm.hidden=true;
-    const lk=el('button','mi','שתף שיר');
-    if(inArtifact){lk.disabled=true}
-    else lk.onclick=async()=>{sm.hidden=true;try{const u=await songLink(s);
-      if(navigator.share){try{await navigator.share({title:s.title,url:u});return}catch(e){if(e&&e.name==='AbortError')return}}
-      try{await navigator.clipboard.writeText(u);toast('הקישור הועתק')}catch(e){dlg({title:'קישור לשיר',text:'העתק את הקישור ושלח אותו:',input:u,ro:true,ok:'סגור',cancel:'ביטול',icons:true})}}catch(e){toast('לא הצלחתי ליצור קישור')}};
-    const fb=el('button','mi','הורד PDF');
-    fb.onclick=()=>{sm.hidden=true;if(sm._done)sm._done();songPdfFlow(s)};
+    const lk=mItem('share','שתף שיר',()=>{sm.hidden=true;shareSong(s)});
+    if(inArtifact)lk.disabled=true;
+    const fb=mItem('pdf','הורד PDF',()=>{sm.hidden=true;if(sm._done)sm._done();songPdfFlow(s)});
     sm.append(lk,fb);
     if(inArtifact)sm.append(el('div','mh','שיתוף בקישור יעבוד אחרי המעבר לאחסון משלך'));
     sd.append(sb,sm);icr.append(sd);
@@ -849,6 +861,8 @@ const IB={
  back:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
  ok:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-width="2.4"/></svg>',
  edit:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13 7l4 4"/></svg>',
+ pdf:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9.5 14.5 12 17l2.5-2.5"/></svg>',
+ copy:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>',
  listen:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/></svg>',
  play:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="none"/></svg>',
  pause:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/><rect x="13.5" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/></svg>'};
@@ -1250,9 +1264,9 @@ function savePdf(doc,name){
 }
 const boxes=[];const cleanBoxes=()=>{boxes.splice(0).forEach(b=>b.remove())};
 const mkBox=()=>{const b=pdfBox();boxes.push(b);return b};
-async function songPdf(s,mine,simp){
-  try{toast('מכין PDF...',1500);await pdfReady();await document.fonts.ready;pdfSimp=!!simp;
-    const pc=mine&&ins==='p'&&s.cp>0,sh=mine?t+(ins==='p'?(s.cp||0):0):0;
+async function songPdf(s,mine,simp,tone){
+  try{toast('מכין PDF...',1500);await pdfReady();await document.fonts.ready;pdfSimp=!!simp;if(tone==null)tone=t;
+    const pc=mine&&ins==='p'&&s.cp>0,sh=mine?tone+(ins==='p'?(s.cp||0):0):0;
     const doc=newDoc(),L=songLayout(s,sh,metaFor(s,sh,mine,pc));
     const fb=mkBox();fb.append(el('div','pfoot','נוצר באפליקציה: "ספר האקורדים שלי"'));
     for(let i=0;i<L.n;i++){if(i)doc.addPage();L.draw(doc,i);drawFoot(doc,fb,0)}
@@ -1272,14 +1286,26 @@ async function bookPdf(f,songs,mine,simp){
     savePdf(doc,fname(f.name)+'.pdf');
   }catch(e){toast('לא הצלחתי ליצור את השירון. בדוק חיבור לאינטרנט ונסה שוב',3500)}finally{cleanBoxes()}
 }
-function songPdfFlow(s){
-  const sh=t+(ins==='p'?(s.cp||0):0),sp0=!!sesSimp[s.id],ck=sp0?{label:'אקורדים מפושטים',on:true}:null;
-  if(!sh){if(!sp0){songPdf(s,false,false);return}
-    dlg({title:'הורדת PDF',check:ck,ok:'הורד',cancel:'ביטול'}).then(r=>{if(r)songPdf(s,false,r.checked)});return}
-  const lbl=t?'הטון שלי ('+(t>0?'+':'−')+Math.abs(t)+')':'כמו במסך (קאפו כלול)';
+function songPdfFlow(s,tn){
+  const T=tn==null?t:tn,sh=T+(ins==='p'?(s.cp||0):0),sp0=!!sesSimp[s.id],ck=sp0?{label:'אקורדים מפושטים',on:true}:null;
+  const songPdf2=(a,b)=>songPdf(s,a,b,T);
+  if(!sh){if(!sp0){songPdf2(false,false);return}
+    dlg({title:'הורדת PDF',check:ck,ok:'הורד',cancel:'ביטול'}).then(r=>{if(r)songPdf2(false,r.checked)});return}
+  const lbl=T?'הטון שלי ('+(T>0?'+':'−')+Math.abs(T)+')':'כמו במסך (קאפו כלול)';
   dlg({title:'איזה טון להוריד?',text:'אפשר להוריד את השיר כמו שהוא מוצג אצלך, או עם האקורדים המקוריים.',alt:lbl,ok:'טון מקורי',cancel:'ביטול',check:ck}).then(r=>{
-    if(!r)return;const c=ck?!!r.checked:false;if(r==='alt'||r.alt)songPdf(s,true,c);else songPdf(s,false,c)});
+    if(!r)return;const c=ck?!!r.checked:false;if(r==='alt'||r.alt)songPdf2(true,c);else songPdf2(false,c)});
 }
+// שיתוף קישור לשיר (מעמוד השיר ומתפריט השיר ברשימה)
+async function shareSong(s){try{const u=await songLink(s);
+  if(navigator.share){try{await navigator.share({title:s.title,url:u});return}catch(e){if(e&&e.name==='AbortError')return}}
+  try{await navigator.clipboard.writeText(u);toast('הקישור הועתק')}catch(e){dlg({title:'קישור לשיר',text:'העתק את הקישור ושלח אותו:',input:u,ro:true,ok:'סגור',cancel:'ביטול',icons:true})}}catch(e){toast('לא הצלחתי ליצור קישור')}}
+// שכפול שיר: "שם (2)", המספר הפנוי הקטן ביותר; העותק פרטי, בלי מועדפים וסרטונים
+function dupSong(s){const re=/^(.*?) \((\d+)\)$/,m=s.title.match(re),base=(m?m[1]:s.title).trim();
+  const used=new Set(S.map(x=>{const q=x.title.match(re);return q&&q[1].trim()===base?+q[2]:0}));
+  let n=2;while(used.has(n))n++;
+  const c=JSON.parse(JSON.stringify(s));c.id=Date.now();while(S.some(x=>x.id===c.id))c.id++;
+  c.title=base+' ('+n+')';c.priv=true;delete c.fav;c.upd=Date.now();S.push(c);sv();toast('נוצר עותק: '+c.title);return c}
+const mItem=(icon,label,fn,cls)=>{const b=el('button','mi'+(cls?' '+cls:''));b.innerHTML=(icon==='trash'?TRI:IB[icon])+'<span></span>';b.lastChild.textContent=label;b.onclick=fn;return b};
 function bookPdfFlow(f){
   const songs=S.filter(x=>(x.fo||[]).includes(f.id)).sort((a,b)=>a.title.localeCompare(b.title,'he'));
   if(!songs.length){toast('התיקייה ריקה');return}
