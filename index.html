@@ -200,7 +200,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 .cld.need{color:#d97706;border-color:#d97706}.cld.off{color:var(--mut)}.cld.err{color:#dc2626;border-color:#dc2626}
 .cld.busy svg{animation:pul 1s ease-in-out infinite}@keyframes pul{50%{opacity:.35}}
 @media (prefers-reduced-motion:reduce){.cld.busy svg{animation:none}}
-.nudge{display:flex;align-items:center;gap:8px;background:var(--hl);border-radius:10px;padding:10px 12px;margin:4px 0 10px;font-size:.9rem}.nudge span{flex:1}
+.wel .nudge{text-align:start;margin:-24px 0 24px}.nudge{display:flex;align-items:center;gap:8px;background:var(--hl);border-radius:10px;padding:10px 12px;margin:4px 0 10px;font-size:.9rem}.nudge span{flex:1}
 .fab{position:fixed;left:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;border:0;background:var(--ch);color:var(--bg);box-shadow:0 6px 18px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:8}
 .fab svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round}
 .fab:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
@@ -627,8 +627,8 @@ function list(){
   const brd=el('div','brand'),blg=el('img','blogo'),btx=el('div','btx'),h10=el('h1','sti','אקורדי');blg.src='icon.svg';blg.alt='';btx.append(h10);
   if(myName())btx.append(el('p','hello','שלום, '+myName()));
   brd.append(blg,btx);hdr.append(brd);
-  let nx=false;try{nx=localStorage.getItem('chords_nudge')==='1'}catch(e){}
-  if(!acct&&S.length>=3&&!nx){const nb=el('div','nudge');nb.append(el('span','','השירים שלך שמורים רק במכשיר הזה. התחבר כדי לגבות אותם.'),btn('התחבר',()=>{v='wel';render()},'b pr'),btn('✕',()=>{try{localStorage.setItem('chords_nudge','1')}catch(e){}nb.remove()},'b px','סגור'));hdr.append(nb)}
+  if(!acct&&S.length>=3&&nudgeOk('login'))hdr.append(mkNudge('login','השירים שלך שמורים רק במכשיר הזה. התחבר כדי לגבות אותם.','התחבר',()=>{v='wel';render()},'לא נציג את זה שוב. אפשר להתחבר בכל זמן מההגדרות'));
+  else if(instNudgeOk())hdr.append(instNudge());
   A.append(icr,hdr);stickTitle(icr,h10,mt0);
   A.append(ibt('plus',()=>{cur={id:Date.now(),title:'',artist:'',link:'',dir:'rtl',lines:[],raw:'',fo:fSel!=null?[fSel]:undefined};v='ed';tab='l';pk=null;render()},'fab','שיר חדש'));
   if(!S.length){A.append(el('div','em','אין עדיין שירים. לחץ על + כדי להוסיף שיר.'));return}
@@ -1134,6 +1134,7 @@ const legal=()=>{const p=el('p','legal');p.append('בהתחברות אתה מס�
 function welcome(){
   loadGIS().catch(()=>{});
   const w=el('div','wel');
+  if(instNudgeOk())w.append(instNudge());
   const lg=el('img','wlogo');lg.src='icon.svg';lg.alt='';w.append(lg,el('h1','','אקורדי'),el('p','tag','המילים והאקורדים שלך, במקום אחד, בעברית ובאנגלית.'));
   const g=btn('',()=>signIn(true),'gbtn');g.innerHTML=IB.cloud;g.append('התחבר עם Google');
   w.append(g,legal());
@@ -1565,6 +1566,16 @@ if(acct){if(!isIOS)loadGIS().catch(()=>{});if(!tokOk())setCloud('need')}
   const upd=()=>{st.setProperty('--vvh',vv.height+'px');st.setProperty('--vvt',vv.offsetTop+'px');st.setProperty('--kb',Math.max(0,innerHeight-vv.height-vv.offsetTop)+'px')};
   vv.addEventListener('resize',upd);vv.addEventListener('scroll',upd);upd()})();
 try{fixDemoArtist()}catch(e){}
+// ===== פסי עידוד (התחברות / התקנה): חוזרים אחרי יומיים, אחרי 3 סגירות לא מוצגים יותר =====
+function nudgeSt(k){let o=null;try{o=JSON.parse(localStorage.getItem('chords_ndg_'+k)||'null')}catch(e){}
+  if(!o&&k==='login'){let old=false;try{old=localStorage.getItem('chords_nudge')==='1'}catch(e){}if(old)o={n:1,t:0}}
+  return o||{n:0,t:0}}
+function nudgeOk(k){const o=nudgeSt(k);return o.n<3&&Date.now()-(o.t||0)>=2*864e5}
+function mkNudge(k,text,lbl,act,fin){const nb=el('div','nudge');
+  nb.append(el('span','',text),btn(lbl,act,'b pr'),btn('✕',()=>{const o=nudgeSt(k);o.n++;o.t=Date.now();try{localStorage.setItem('chords_ndg_'+k,JSON.stringify(o))}catch(e){}nb.remove();if(o.n>=3)toast(fin,3500)},'b px','סגור'));return nb}
+function instNudgeOk(){return !isStandalone()&&(isIOS||/Android/i.test(navigator.userAgent))&&nudgeOk('inst')}
+function instNudge(){return mkNudge('inst','התקן את אקורדי במסך הבית','התקן',installApp,'לא נציג את זה שוב. אפשר להתקין בכל זמן מההגדרות')}
+
 // ===== אפליקציה מותקנת: צבע שורת סטטוס, התקנה, עבודה בלי אינטרנט ועדכון גרסה =====
 function syncTC(){const m=document.querySelector('meta[name=theme-color]');if(m)try{m.content=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#f3f5f8'}catch(e){}}
 syncTC();try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',syncTC)}catch(e){}
