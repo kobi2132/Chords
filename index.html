@@ -112,6 +112,7 @@ html{overflow-x:clip}
 .sar{display:flex;align-items:center;gap:8px;color:var(--mut);font-size:.85rem;margin:2px 0 14px;min-height:1.2em}
 .cpt{margin-inline-start:auto;background:var(--hl);color:var(--ch);border-radius:6px;padding:1px 8px;font-size:.78rem}
 .cpt:empty{display:none}
+.bpt:empty{display:none}
 .mn.dn{bottom:auto;top:calc(100% + 6px)}
 .wel{max-width:420px;margin:0 auto;padding:48px 4px 40px;text-align:center}
 .wel h1{font-size:1.8rem;margin:0 0 8px}.wel .tag{color:var(--mut);margin:0 0 28px}
@@ -251,6 +252,9 @@ const A=document.getElementById('app');
 const el=(g,c,x)=>{const e=document.createElement(g);if(c)e.className=c;if(x!=null)e.textContent=x;return e};
 const btn=(x,f,c,a)=>{const b=el('button',c||'b',x);b.onclick=f;if(a)b.setAttribute('aria-label',a);return b};
 const stop=()=>{clearInterval(timer);timer=null};
+// ערכים זמניים לכל שיר (BPM במטרונום, מהירות גלילה) – נשמרים רק עד סגירת האפליקציה
+const sesB={},sesS={};
+const PXS=v=>2*Math.pow(40,v/100),VOF=px=>Math.max(0,Math.min(100,Math.round(100*Math.log(px/2)/Math.log(40))));
 const N=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'],FL={Db:'C#',Eb:'D#',Gb:'F#',Ab:'G#',Bb:'A#'};
 const sh0=()=>v==='ed'?0:t+(ins==='p'&&cur?cur.cp||0:0);
 const tr=c=>{const k=sh0();return k?c.replace(/[A-G][#b]?/g,m=>N[(((N.indexOf(FL[m]||m)+k)%12)+12)%12]):c};
@@ -699,13 +703,13 @@ function view(){
     sd.append(sb,sm);icr.append(sd);
   }
   let cdW=null,lnk=null;
-  mBpm=s.bpm||mBpm||100;
+  mBpm=sesB[s.id]||s.bpm||100;
   const md=el('div','dd'),mm=el('div','mn le'),mb=ibt('metro',()=>{
     if(mOn){metroStop();mm.hidden=true;updM();return}
     mm.hidden=!mm.hidden;
     if(!mm.hidden){watchMenu(md,mm)}},'b ic','מטרונום');
   mm.hidden=true;
-  const bv=el('div','bpm'),setB=n=>{mBpm=Math.min(250,Math.max(30,n));bv.innerHTML='';bv.append(String(mBpm),el('small','','BPM'));if(!inc){s.bpm=mBpm;s.upd=Date.now();sv()}};
+  const bv=el('div','bpm'),setB=n=>{mBpm=Math.min(250,Math.max(30,n));bv.innerHTML='';bv.append(String(mBpm),el('small','','BPM'));sesB[s.id]=mBpm;A._syncSp&&A._syncSp()};
   bv.append(String(mBpm),el('small','','BPM'));
   const hold=(lbl,d,a)=>{const b=el('button','b',lbl);b.setAttribute('aria-label',a);let to=0,iv=0;
     const end=()=>{clearTimeout(to);clearInterval(iv)};
@@ -733,7 +737,7 @@ function view(){
   }
   if(safeLink(s.link)){const a=el('a','b ic');a.innerHTML=IB.listen;a.href=s.link;a.target='_blank';a.rel='noopener noreferrer';a.setAttribute('aria-label','האזן לשיר');lnk=a}
   const sar=el('div','sar'),cpt=el('span','cpt');
-  sar.append(el('span','',s.artist||''),cpt);
+  const bpt=el('span','bpt');if(s.bpm){if(s.artist)bpt.append('· ');const x=el('span','',s.bpm+' BPM');x.dir='ltr';bpt.append(x)}sar.append(el('span','',s.artist||''),bpt,cpt);
   icr.classList.add('stk');const mt1=el('span','mt',s.title);mt1.setAttribute('aria-hidden','true');icr.append(mt1);
   if(inc){const bn=el('div','bnr');bn.append(el('span','','שיר ששותף איתך'),btn('הוסף לשירים שלי',()=>{
     if(!acct&&!welSeen()){pend=s;v='wel';render();return}
@@ -741,7 +745,7 @@ function view(){
   const trw=el('div','trow'),h11=el('h1','sti',s.title);trw.append(h11);if(!inc)trw.append(heartBtn(s,'hl hrt'));
   hdr.append(trw,sar);
   const bd=el('div','bd'),tb=el('div','tb'),r1=el('div','tr1'),r2=el('div','tr2');
-  const draw=()=>{bd.textContent='';bd.style.fontSize=fs+'px';s.lines.forEach((l,i)=>bd.append(rl(l,s.dir,false,i)));fix(bd)};
+  const draw=()=>{bd.textContent='';bd.style.fontSize=fs+'px';s.lines.forEach((l,i)=>bd.append(rl(l,s.dir,false,i)));fix(bd);A._syncSp&&A._syncSp()};
   const dd=el('div','dd'),mn=el('div','mn dn'),ibn=btn('',()=>{
     mn.hidden=!mn.hidden;
     if(!mn.hidden){watchMenu(dd,mn)}},'b ic sgi');
@@ -752,15 +756,21 @@ function view(){
   const ui=()=>{ibn.innerHTML=IC[ins];ibn.setAttribute('aria-label','כלי נגינה: '+NM[ins]);
     [...mn.children].forEach((b,n)=>b.classList.toggle('on',['p','g','u'][n]===ins));
     cpt.textContent=s.cp>0?'קאפו '+s.cp+(ins==='p'?' כלול באקורדים':''):'';
-    sar.hidden=!s.artist&&!(s.cp>0)};
+    sar.hidden=!s.artist&&!(s.cp>0)&&!s.bpm};
   const tv=el('button','val'),sh=()=>{tv.textContent='';tv.append(el('small','','טון'),el('b','',t>0?'+'+t:t<0?'\u2212'+(-t):'0'))};
   const tc=n=>{t=n;s.tp=t||undefined;if(!inc)s.upd=Date.now();sh();draw();sv()};
   tv.onclick=()=>tc(0);tv.setAttribute('aria-label','איפוס טון');sh();
   const play=btn('',()=>{timer?stop():go();upd()},'b pr ic sq');
   const upd=()=>{play.innerHTML=timer?IB.pause:IB.play;play.setAttribute('aria-label',timer?'עצור גלילה':'הפעל גלילה')};
-  const go=()=>{stop();timer=setInterval(()=>{scrollBy(0,1);if(innerHeight+scrollY>=document.documentElement.scrollHeight-2){stop();upd()}},Math.round(130/sp))};
-  const sl=el('input');sl.type='range';sl.min=1;sl.max=10;sl.value=sp;sl.setAttribute('aria-label','מהירות גלילה');
-  sl.oninput=()=>{sp=+sl.value;if(timer)go()};
+  const go=()=>{stop();timer=setInterval(()=>{scrollBy(0,1);if(innerHeight+scrollY>=document.documentElement.scrollHeight-2){stop();upd()}},Math.max(8,Math.round(1000/PXS(sp))))};
+  const sl=el('input');sl.type='range';sl.min=0;sl.max=100;sl.step=1;sl.setAttribute('aria-label','מהירות גלילה');
+  sl.oninput=()=>{sp=+sl.value;sesS[s.id]=sp;if(timer)go()};
+  // מהירות ברירת מחדל: לפי ה-BPM (או הזמני מהמטרונום) ומספר הפעמות לשורה, ולפי גובה השורות על המסך
+  const autoV=()=>{const b=sesB[s.id]||s.bpm;if(!b||!bd.isConnected)return 66;
+    const n=s.lines.filter(l=>l.ty==='c'?l.x.length:l.t.trim()).length;if(!n)return 66;
+    const sec=(s.bpl||8)*60/b;return VOF(bd.getBoundingClientRect().height/n/sec)};
+  const syncSp=()=>{sp=sesS[s.id]!=null?sesS[s.id]:autoV();sl.value=sp;if(timer)go()};
+  A._syncSp=()=>{if(sesS[s.id]==null)syncSp()};sp=sesS[s.id]!=null?sesS[s.id]:66;sl.value=sp;requestAnimationFrame(syncSp);
   let paused=false;
   const showPop=(name,q)=>{
     if(closeP)closeP(false);
@@ -1176,9 +1186,9 @@ function paginate(box,hf=()=>CH){
 function drawPage(doc,box,pg){const r=box.getBoundingClientRect();pg.items.forEach(p=>drawEl(doc,p.b,r.left,r.top+pg.top,MT))}
 function footBox(){const b=pdfBox();const f=el('div','pfoot','נוצר באפליקציה: "ספר האקורדים שלי"');b.append(f);return b}
 function drawFoot(doc,fb,num){const r=fb.getBoundingClientRect();drawEl(doc,fb,r.left,r.top,PH-MB+26);if(num){doc.setFont('Alef','normal');doc.setFontSize(8);doc.setTextColor(136,136,136);doc.text(String(num),MX,PH-MB+26+ascent(8,false))}}
-function metaFor(s,sh,mine,pianoCapo){const m=[];if(s.artist)m.push(s.artist);if(s.cp>0)m.push('קאפו '+s.cp+(pianoCapo?' (כלול באקורדים)':''));const tp=mine?(s.tp||0):0;if(tp)m.push('טון '+(tp>0?'+':'−')+Math.abs(tp));return m}
+function metaFor(s,sh,mine,pianoCapo){const m=[];if(s.artist)m.push(s.artist);if(s.cp>0)m.push('קאפו '+s.cp+(pianoCapo?' (כלול באקורדים)':''));const tp=mine?(s.tp||0):0;if(tp)m.push('טון '+(tp>0?'+':'−')+Math.abs(tp));if(s.bpm)m.push(s.bpm+' BPM');return m}
 function songInto(box,s,sh,meta,noHead){
-  if(!noHead){const hd=el('div','pdfh');hd.append(el('div','pt',s.title));if(meta.length)hd.append(el('div','pm',meta.join(' · ')));box.append(hd)}
+  if(!noHead){const hd=el('div','pdfh');hd.append(el('div','pt',s.title));if(meta.length){const pm=el('div','pm');meta.forEach((x,i)=>{if(i)pm.append(' · ');const q=el('span','',x);if(/^[\x20-\x7E]+$/.test(x))q.dir='ltr';pm.append(q)});hd.append(pm)};box.append(hd)}
   const sv0={cur,t,ins,v};cur=s;v='vw';t=sh;ins='g';
   try{s.lines.forEach((l,i)=>box.append(rl(l,s.dir,false,i)))}finally{cur=sv0.cur;t=sv0.t;ins=sv0.ins;v=sv0.v}
   fix(box);
@@ -1363,7 +1373,11 @@ function edit(){
   const cs2=el('select','f');cs2.style.cssText='flex:none;width:auto';cs2.setAttribute('aria-label','קאפו');
   for(let i=0;i<=12;i++){const o=el('option','',i?'קאפו '+i:'ללא קאפו');o.value=i;cs2.append(o)}
   cs2.value=s.cp||0;cs2.onchange=()=>{s.cp=+cs2.value||undefined};
-  const r2=el('div','row');r2.append(inp('artist','אמן (לא חובה)'),cs2);
+  const bpi=el('input','f');bpi.type='number';bpi.inputMode='numeric';bpi.min=30;bpi.max=250;bpi.placeholder='BPM';bpi.style.cssText='flex:none;width:5.5em';bpi.setAttribute('aria-label','BPM (קצב)');
+  bpi.value=s.bpm||'';
+  bpi.oninput=()=>{const n=parseInt(bpi.value,10);s.bpm=n>=30&&n<=250?n:undefined;delete sesB[s.id];delete sesS[s.id]};
+  bpi.onblur=()=>{if(bpi.value==='')return;const n=parseInt(bpi.value,10);if(!(n>=30&&n<=250)){const c=isNaN(n)?'':Math.min(250,Math.max(30,n));bpi.value=c;s.bpm=c||undefined}};
+  const r2=el('div','row');r2.append(inp('artist','אמן (לא חובה)'),bpi,cs2);
   const ps=el('select','f');ps.style.cssText='flex:none;width:auto';ps.setAttribute('aria-label','פרטיות');
   [['pub','ציבורי'],['priv','פרטי']].forEach(([x,y])=>{const o=el('option','',y);o.value=x;ps.append(o)});
   ps.value=s.priv?'priv':'pub';ps.onchange=()=>{s.priv=ps.value==='priv'||undefined};
@@ -1402,7 +1416,7 @@ document.addEventListener('click',e=>{
   if(!e.target.closest('.cb,.cl,.cd,.cc,.gap,.b')){pk=null;render()}
 });
 let pinch=null,wt=0;
-const zoomTo=(nf,done)=>{if(v!=='vw')return;fs=Math.min(60,Math.max(12,nf));const bd=A.querySelector('.bd');if(bd){bd.style.fontSize=fs+'px';if(done)fix(bd)}};
+const zoomTo=(nf,done)=>{if(v!=='vw')return;fs=Math.min(60,Math.max(12,nf));const bd=A.querySelector('.bd');if(bd){bd.style.fontSize=fs+'px';if(done){fix(bd);A._syncSp&&A._syncSp()}}};
 const tdist=e=>Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
 document.addEventListener('touchstart',e=>{if(v==='vw'&&e.touches.length===2){pinch={d:tdist(e)||1,f:fs};if(closeP)closeP(true)}},{passive:true});
 document.addEventListener('touchmove',e=>{if(pinch&&e.touches.length===2){e.preventDefault();zoomTo(pinch.f*tdist(e)/pinch.d)}},{passive:false});
@@ -1413,7 +1427,7 @@ document.addEventListener('gesturechange',e=>{if(v==='vw')e.preventDefault()});
 document.addEventListener('wheel',e=>{if(v==='vw'&&e.ctrlKey){e.preventDefault();zoomTo(fs*Math.exp(-e.deltaY*.01));clearTimeout(wt);wt=setTimeout(()=>zoomTo(fs,true),150)}},{passive:false});
 /* phone back button */
 let armed=false,ignorePop=false,edSnap=null,edObj=null;
-const edState=()=>{const c=cur;return JSON.stringify({a:[c.title,c.artist,c.link,c.cp,c.priv,c.dir],t:c.raw!=null?c.raw:c.lines.filter(l=>l.ty!=='c').map(l=>l.t).join('\n'),c:c.lines.map(l=>l.ty==='c'?[l.x,l.lab]:l.c)})};
+const edState=()=>{const c=cur;return JSON.stringify({a:[c.title,c.artist,c.link,c.cp,c.bpm,c.priv,c.dir],t:c.raw!=null?c.raw:c.lines.filter(l=>l.ty!=='c').map(l=>l.t).join('\n'),c:c.lines.map(l=>l.ty==='c'?[l.x,l.lab]:l.c)})};
 function syncHist(){
   if(v==='ed'&&edObj!==cur){edObj=cur;edSnap=edState()}
   if(v!=='ed')edObj=null;
