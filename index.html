@@ -120,6 +120,9 @@ html{overflow-x:clip}
 .cpt{margin-inline-start:auto;background:var(--hl);color:var(--ch);border-radius:6px;padding:1px 8px;font-size:.78rem}
 .cpt:empty{display:none}
 .bpt{background:var(--gbg);color:var(--gfg);border-radius:6px;padding:1px 8px;font-size:.78rem}.bpt:empty{display:none}
+.nte{white-space:pre-wrap;font-size:.85rem;color:var(--mut);background:var(--cd);border:1px solid var(--bd);border-radius:8px;padding:6px 10px;margin:-6px 0 12px}
+textarea.f.nta{min-height:0;line-height:1.4;resize:vertical}
+.pdfbox .pnote{white-space:pre-wrap;font-size:11px;color:#444!important;margin-top:4px}
 .cpt+.bpt,.cpt:empty+.bpt{margin-inline-start:0}.cpt:empty+.bpt{margin-inline-start:auto}
 .mn.dn{bottom:auto;top:calc(100% + 6px)}
 .wel{max-width:420px;margin:0 auto;padding:48px 4px 40px;text-align:center}
@@ -759,7 +762,7 @@ function view(){
     if(!acct&&!welSeen()){pend=s;v='wel';render();return}
     s.upd=s.upd||Date.now();mergeSongs([s]);incoming=null;cur=S.find(x=>x.id===s.id)||s;t=cur.tp||0;toast('השיר נוסף לשירים שלך');render()},'b pr'));hdr.append(bn)}
   const trw=el('div','trow'),h11=el('h1','sti',s.title);trw.append(h11);if(!inc)trw.append(heartBtn(s,'hl hrt'));
-  hdr.append(trw,sar);
+  hdr.append(trw,sar);if(s.note&&s.note.trim()){const nt=el('div','nte',s.note.trim());nt.dir='auto';hdr.append(nt)}
   const bd=el('div','bd'),tb=el('div','tb'),r1=el('div','tr1'),r2=el('div','tr2');
   const draw=()=>{bd.textContent='';bd.style.fontSize=fs+'px';s.lines.forEach((l,i)=>bd.append(rl(l,s.dir,false,i)));fix(bd);A._syncSp&&A._syncSp()};
   const dd=el('div','dd'),mn=el('div','mn dn'),ibn=btn('',()=>{
@@ -1213,7 +1216,7 @@ function footBox(){const b=pdfBox();const f=el('div','pfoot','נוצר באפל�
 function drawFoot(doc,fb,num){const r=fb.getBoundingClientRect();drawEl(doc,fb,r.left,r.top,PH-MB+26);if(num){doc.setFont('Alef','normal');doc.setFontSize(8);doc.setTextColor(136,136,136);doc.text(String(num),MX,PH-MB+26+ascent(8,false))}}
 function metaFor(s,sh,mine,pianoCapo){const m=[];if(s.artist)m.push(s.artist);if(s.cp>0)m.push('קאפו '+s.cp+(pianoCapo?' (כלול באקורדים)':''));const tp=mine?(s.tp||0):0;if(tp)m.push('טון '+(tp>0?'+':'−')+Math.abs(tp));if(s.bpm)m.push(s.bpm+' BPM');if(pdfSimp)m.push('אקורדים מפושטים');return m}
 function songInto(box,s,sh,meta,noHead){
-  if(!noHead){const hd=el('div','pdfh');hd.append(el('div','pt',s.title));if(meta.length){const pm=el('div','pm');meta.forEach((x,i)=>{if(i)pm.append(' · ');const q=el('span','',x);if(/^[\x20-\x7E]+$/.test(x)&&!/ BPM$/.test(x))q.dir='ltr';pm.append(q)});hd.append(pm)};box.append(hd)}
+  if(!noHead){const hd=el('div','pdfh');hd.append(el('div','pt',s.title));if(meta.length){const pm=el('div','pm');meta.forEach((x,i)=>{if(i)pm.append(' · ');const q=el('span','',x);if(/^[\x20-\x7E]+$/.test(x)&&!/ BPM$/.test(x))q.dir='ltr';pm.append(q)});hd.append(pm)}if(s.note&&s.note.trim()){const pn=el('div','pnote',s.note.trim());pn.dir='auto';hd.append(pn)}box.append(hd)}
   const sv0={cur,t,ins,v};cur=s;v='vw';t=sh;ins='g';
   try{s.lines.forEach((l,i)=>box.append(rl(l,s.dir,false,i)))}finally{cur=sv0.cur;t=sv0.t;ins=sv0.ins;v=sv0.v}
   fix(box);
@@ -1418,7 +1421,9 @@ function edit(){
     fpb.innerHTML=IB.folderPlus;fpb.setAttribute('aria-label','הוסף לתיקייה'+(nm.length?' ('+nm.join(', ')+')':''));
     const n=el('span','n',nm.length===0?'הוסף לתיקייה':nm.length===1?nm[0]:nm.length+' תיקיות');fpb.append(n)};
   drawF();
-  A.append(row,r2,r3,fr,tb);
+  const nta=el('textarea','f nta');nta.rows=2;nta.maxLength=500;nta.placeholder='הערות (לא חובה) – למשל קצב פריטה';nta.value=s.note||'';nta.dir='auto';nta.setAttribute('aria-label','הערות');
+  nta.oninput=()=>{s.note=nta.value||undefined};
+  A.append(row,r2,r3,fr,nta,tb);
   if(tab==='l'){
     if(s.raw==null)s.raw=s.lines.filter(l=>l.ty!=='c').map(l=>l.t).join('\n');
     const ta=el('textarea','f');ta.value=s.raw;ta.placeholder='הדבק כאן את מילות השיר';ta.dir=s.dir;
@@ -1434,10 +1439,18 @@ function edit(){
   }
 }
 
+// מסך דלוק בעמוד השיר: עד 5 דקות מהנגיעה האחרונה
+let wl=null,wlT=0;
+async function wakeOn(){try{if(!wl&&'wakeLock' in navigator&&document.visibilityState==='visible'){wl=await navigator.wakeLock.request('screen');wl.addEventListener('release',()=>{wl=null})}}catch(e){}}
+function wakeOff(){clearTimeout(wlT);wlT=0;if(wl){const w=wl;wl=null;w.release().catch(()=>{})}}
+function wakePing(){if(v!=='vw')return;wakeOn();clearTimeout(wlT);wlT=setTimeout(wakeOff,5*60e3)}
+['pointerdown','touchstart','wheel','keydown'].forEach(e=>document.addEventListener(e,()=>{if(v==='vw')wakePing()},{passive:true,capture:true}));
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&v==='vw'&&wlT)wakeOn()});
 function render(){
   if(closeP)closeP(false);onChord=null;closeP=null;if(dlgClose)dlgClose(null);
   metroStop();updCamBtn=()=>{};if(cam&&!(v==='vw'&&cur&&cur.id===cam.songId))camClose();
   const k=v+tab+(cur&&cur.id),y=k===pv?scrollY:0;pv=k;
+  if(v==='vw')wakePing();else wakeOff();
   A.textContent='';({list,vw:view,ed:edit,set:settings,gal:gallery,wel:welcome,onb:onboard,load:loading,fadd:folderAdd})[v]();scrollTo(0,y);syncHist();
   if(v==='ed'&&tab==='c'&&pk){const e=A.querySelector('.cl.sel,.cc.on');
     if(e){const r=e.getBoundingClientRect(),lim=innerHeight-290;if(r.bottom>lim)scrollBy(0,r.bottom-lim+16);else if(r.top<90)scrollBy(0,r.top-110)}}
@@ -1459,7 +1472,7 @@ document.addEventListener('gesturechange',e=>{if(v==='vw')e.preventDefault()});
 document.addEventListener('wheel',e=>{if(v==='vw'&&e.ctrlKey){e.preventDefault();zoomTo(fs*Math.exp(-e.deltaY*.01));clearTimeout(wt);wt=setTimeout(()=>zoomTo(fs,true),150)}},{passive:false});
 /* phone back button */
 let armed=false,ignorePop=false,edSnap=null,edObj=null;
-const edState=()=>{const c=cur;return JSON.stringify({a:[c.title,c.artist,c.link,c.cp,c.bpm,c.priv,c.dir],t:c.raw!=null?c.raw:c.lines.filter(l=>l.ty!=='c').map(l=>l.t).join('\n'),c:c.lines.map(l=>l.ty==='c'?[l.x,l.lab]:l.c)})};
+const edState=()=>{const c=cur;return JSON.stringify({a:[c.title,c.artist,c.link,c.cp,c.bpm,c.priv,c.dir,c.note],t:c.raw!=null?c.raw:c.lines.filter(l=>l.ty!=='c').map(l=>l.t).join('\n'),c:c.lines.map(l=>l.ty==='c'?[l.x,l.lab]:l.c)})};
 function syncHist(){
   if(v==='ed'&&edObj!==cur){edObj=cur;edSnap=edState()}
   if(v!=='ed')edObj=null;
