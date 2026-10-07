@@ -184,7 +184,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 .pdfbox .pm{font-size:11px;color:#555;margin-top:3px}
 .pdfbox .toc{display:flex;justify-content:space-between;gap:12px;font-size:12px;padding:6px 0;border-bottom:1px solid #ddd}.pdfbox .tn{direction:ltr;color:#555}
 .pdfbox .pfoot{font-size:8px;color:#888}
-.hello{color:var(--mut);margin:2px 0 12px;font-size:.95rem}
+.hello{color:var(--mut);margin:2px 0 12px;font-size:.95rem}.brand{display:flex;align-items:center;gap:12px;margin:12px 0}.blogo{width:52px;height:52px;flex:none;border-radius:12px}.btx{min-width:0}.brand .sti{margin:0}.brand .hello{margin:2px 0 0}.mlogo{width:22px;height:22px;vertical-align:middle;margin-inline-end:6px;border-radius:5px}
 .legal{font-size:.8rem;color:var(--mut);margin:10px 0 26px}.legal a{color:var(--ch)}
 .skip{background:none;border:0;color:var(--fg);text-decoration:underline;cursor:pointer;font-size:.95rem;padding:8px}
 .lim{text-align:start;font-size:.82rem;color:var(--mut);margin:10px auto 0;padding-inline-start:1.2em;max-width:340px}.lim li{margin:3px 0}
@@ -614,10 +614,11 @@ function stickTitle(bar,h1,mt){
 function list(){
   const hdr=el('div','hdr'),icr=el('div','icr');
   icr.append(ibt('film',()=>{galSong=null;v='gal';render()},'b ic','הסרטונים שלי'),ibt('gear',()=>{v='set';render()},'b ic','הגדרות'));
-  const mt0=el('span','mt','אקורדי');mt0.setAttribute('aria-hidden','true');icr.prepend(mt0);icr.classList.add('stk');
+  const mt0=el('span','mt'),ml=el('img','mlogo');ml.src='icon.svg';ml.alt='';mt0.append(ml,'אקורדי');mt0.setAttribute('aria-hidden','true');icr.prepend(mt0);icr.classList.add('stk');
   if(acct){const cb=ibt('cloud',()=>{if(cloudSt==='need'||cloudSt==='err')signIn(false);else{v='set';render()}},'b ic cld');cb.id='cloudBtn';icr.insertBefore(cb,icr.children[1]||null);paintCloud()}
-  const h10=el('h1','sti','אקורדי');hdr.append(h10);
-  if(myName())hdr.append(el('p','hello','שלום, '+myName()));
+  const brd=el('div','brand'),blg=el('img','blogo'),btx=el('div','btx'),h10=el('h1','sti','אקורדי');blg.src='icon.svg';blg.alt='';btx.append(h10);
+  if(myName())btx.append(el('p','hello','שלום, '+myName()));
+  brd.append(blg,btx);hdr.append(brd);
   let nx=false;try{nx=localStorage.getItem('chords_nudge')==='1'}catch(e){}
   if(!acct&&S.length>=3&&!nx){const nb=el('div','nudge');nb.append(el('span','','השירים שלך שמורים רק במכשיר הזה. התחבר כדי לגבות אותם.'),btn('התחבר',()=>{v='wel';render()},'b pr'),btn('✕',()=>{try{localStorage.setItem('chords_nudge','1')}catch(e){}nb.remove()},'b px','סגור'));hdr.append(nb)}
   A.append(icr,hdr);stickTitle(icr,h10,mt0);
@@ -1193,7 +1194,9 @@ let pdfLib=null,pdfFonts=null;
 const PW=595,PH=842,MX=40,MT=46,MB=58,CW=PW-2*MX,CH=PH-MT-MB;
 const loadScript=src=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.append(s)});
 const ab2b64=buf=>{let s='';const u=new Uint8Array(buf);for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)};
+let pdfLogo=null;
 async function pdfReady(){
+  if(!pdfLogo){try{const im=new Image();im.src='icon.svg';await im.decode();const c=document.createElement('canvas');c.width=c.height=96;c.getContext('2d').drawImage(im,0,0,96,96);pdfLogo=c.toDataURL('image/png')}catch(e){}}
   if(!pdfLib){await loadScript('vendor/jspdf.umd.min.js');pdfLib=window.jspdf.jsPDF}
   if(!pdfFonts){
     const [r,b]=await Promise.all(['fonts/Alef-Regular.ttf','fonts/Alef-Bold.ttf'].map(u=>fetch(u).then(x=>{if(!x.ok)throw new Error('font');return x.arrayBuffer()})));
@@ -1232,8 +1235,9 @@ function paginate(box,hf=()=>CH){
   return pages;
 }
 function drawPage(doc,box,pg){const r=box.getBoundingClientRect();pg.items.forEach(p=>drawEl(doc,p.b,r.left,r.top+pg.top,MT))}
-function footBox(){const b=pdfBox();const f=el('div','pfoot','נוצר באפליקציה: "אקורדי"');b.append(f);return b}
-function drawFoot(doc,fb,num){const r=fb.getBoundingClientRect();drawEl(doc,fb,r.left,r.top,PH-MB+26);if(num){doc.setFont('Alef','normal');doc.setFontSize(8);doc.setTextColor(136,136,136);doc.text(String(num),MX,PH-MB+26+ascent(8,false))}}
+const footEl=()=>{const d=el('div','pfoot');d.append(el('span','','נוצר באפליקציה: "אקורדי"'));return d};
+function footBox(){const b=pdfBox();b.append(footEl());return b}
+function drawFoot(doc,fb,num){const r=fb.getBoundingClientRect();drawEl(doc,fb,r.left,r.top,PH-MB+26);const sp=fb.querySelector('.pfoot span');if(pdfLogo&&sp){const q=sp.getBoundingClientRect();try{doc.addImage(pdfLogo,'PNG',MX+(q.left-r.left)-14,PH-MB+25.5,9,9)}catch(e){}}if(num){doc.setFont('Alef','normal');doc.setFontSize(8);doc.setTextColor(136,136,136);doc.text(String(num),MX,PH-MB+26+ascent(8,false))}}
 function metaFor(s,sh,mine,pianoCapo){const m=[];if(s.artist)m.push(s.artist);if(s.cp>0)m.push('קאפו '+s.cp+(pianoCapo?' (כלול באקורדים)':''));const tp=mine?(s.tp||0):0;if(tp)m.push('טון '+(tp>0?'+':'−')+Math.abs(tp));if(s.bpm)m.push(s.bpm+' BPM');if(pdfSimp)m.push('אקורדים מפושטים');return m}
 function songInto(box,s,sh,meta,noHead){
   if(!noHead){const hd=el('div','pdfh');hd.append(el('div','pt',s.title));if(meta.length){const pm=el('div','pm');meta.forEach((x,i)=>{if(i)pm.append(' · ');const q=el('span','',x);if(/^[\x20-\x7E]+$/.test(x)&&!/ BPM$/.test(x))q.dir='ltr';pm.append(q)});hd.append(pm)}if(s.note&&s.note.trim()){const pn=el('div','pnote',s.note.trim());pn.dir='auto';hd.append(pn)}box.append(hd)}
@@ -1274,14 +1278,14 @@ async function songPdf(s,mine,simp,tone){
   try{toast('מכין PDF...',1500);await pdfReady();await document.fonts.ready;pdfSimp=!!simp;if(tone==null)tone=t;
     const pc=mine&&ins==='p'&&s.cp>0,sh=mine?tone+(ins==='p'?(s.cp||0):0):0;
     const doc=newDoc(),L=songLayout(s,sh,metaFor(s,sh,mine,pc));
-    const fb=mkBox();fb.append(el('div','pfoot','נוצר באפליקציה: "אקורדי"'));
+    const fb=mkBox();fb.append(footEl());
     for(let i=0;i<L.n;i++){if(i)doc.addPage();L.draw(doc,i);drawFoot(doc,fb,0)}
     savePdf(doc,fname(s.title)+'.pdf');
   }catch(e){toast('לא הצלחתי ליצור PDF. בדוק חיבור לאינטרנט ונסה שוב',3500)}finally{cleanBoxes();pdfSimp=null}
 }
 async function bookPdf(f,songs,mine,simp){
   try{toast('מכין שירון...',2000);await pdfReady();await document.fonts.ready;
-    const doc=newDoc(),fb=mkBox();fb.append(el('div','pfoot','נוצר באפליקציה: "אקורדי"'));
+    const doc=newDoc(),fb=mkBox();fb.append(footEl());
     const its=songs.map(s=>{const pc=mine&&ins==='p'&&s.cp>0,sh=mine?(s.tp||0)+(ins==='p'?(s.cp||0):0):0;pdfSimp=!!(simp&&sesSimp[s.id]);try{return{s,L:songLayout(s,sh,metaFor(s,sh,mine,pc))}}finally{pdfSimp=null}});
     const cover=nums=>{const box=mkBox(),hd=el('div','pdfh');hd.append(el('div','pt big',f.name),el('div','pm','שירון · '+songs.length+' שירים'));box.append(hd);
       its.forEach((it,i)=>{const r=el('div','toc');r.append(el('span','',it.s.title+(it.s.artist?' · '+it.s.artist:'')),el('span','tn',nums?String(nums[i]):'000'));box.append(r)});return box};
