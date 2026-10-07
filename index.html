@@ -472,14 +472,30 @@ function sync(){
   const bound=i=>{if(i>=oT.length)return{end:1};
     const f=oT[i].t.length&&m[oS[i]]>=0?m[oS[i]]:-1;if(f>=0){const L=lineAt(f);return f===nS[L]?{L}:{p:f}}
     if(i===0)return{L:0};const nl=oS[i]-1;return m[nl]>=0?{L:lineAt(m[nl]+1)}:{p:ins[nl]}};
-  oT.forEach((l,i)=>{const len=chars(l.t).length;
+  // אקורד שהאות שלו נמחקה: אם האות שהוא עובר אליה כבר תפוסה – לרווח שלפני המילה (או לשוליים בתחילת שורה)
+  const moved=(p,ch,avoid)=>{if(p>=B.length)p=Math.max(0,B.length-1);const L=lineAt(p);let col=p-nS[L];if(col>=nL[L])col=nL[L]?nL[L]-1:0;
+    if(avoid&&out[L].c[col]){let s=col;while(s>0&&B[nS[L]+s-1]!==' ')s--;if(s>0)col=s-1;else if(!out[L].c[-1])col=-1}
+    put(L,col,ch)};
+  const gap=(p,ch)=>{if(p>0&&B[p-1]===' ')p--;onChar(p,ch,false)};  // איחוד שורות: לרווח בין החלקים
+  const late=[];
+  // שלב 1: אקורדים שהאות שלהם קיימת. שלב 2 (late): אקורדים שזזו, כדי שלא ידרסו את הקיימים
+  oT.forEach((l,i)=>{const len=chars(l.t).length;if(drop[oS[i]])return;
     Object.keys(l.c).forEach(k=>{const ch=l.c[k];if(!ch)return;k=+k;
-      if(drop[oS[i]+Math.min(Math.max(k,0),len)])return;
-      if(k===-1){const b=bound(i);b.L!=null?put(b.L,-1,ch):b.end?put(out.length-1,-1,ch):onChar(b.p,ch,true);return}
+      if(k===-1){const b=bound(i);if(b.L!=null)put(b.L,-1,ch);else if(b.end)put(out.length-1,-1,ch);else late.push(()=>gap(b.p,ch));return}
       if(k>=len){const nl=oS[i]+len;
-        if(nl>=A.length||m[nl]>=0){const L=nl>=A.length?out.length-1:lineAt(m[nl]);put(L,nL[L],ch)}else{let p=ins[nl];if(p>0&&B[p-1]===' ')p--;onChar(p,ch,false)}return}
-      const o=oS[i]+k;onChar(tgt(o),ch,false)})});
-  cl.forEach(z=>{const b=bound(z.a);if(b.end)after.push(z.l);else before[b.L!=null?b.L:lineAt(b.p)].push(z.l)});
+        if(nl>=A.length||m[nl]>=0){const L=nl>=A.length?out.length-1:lineAt(m[nl]);put(L,nL[L],ch)}else late.push(()=>gap(ins[nl],ch));return}
+      const o=oS[i]+k;if(m[o]>=0)onChar(m[o],ch,false);else late.push(()=>{const p=tgt(o);moved(p,ch,p===ins[o])})})});
+  late.forEach(f=>f());
+  // שורות אקורדים קיימות, ושורות מילים שנמחקו כולן – האקורדים שלהן הופכים לשורת אקורדים במקומן
+  const lab=w=>(cur.dir==='ltr'?['Intro','Interlude','Outro']:['פתיחה','מעבר','סיום'])[w];
+  const place=(b,l)=>{if(b.end)after.push(l);else before[b.L!=null?b.L:lineAt(b.p)].push(l)};
+  let ti=0;
+  cur.lines.forEach(l=>{
+    if(l.ty==='c'){place(bound(ti),l);return}
+    if(drop[oS[ti]]){const x=[];Object.keys(l.c).map(Number).sort((a,b)=>a-b).forEach(k=>x.push(...lc(l,k)));
+      if(x.length){let j=ti+1;while(j<oT.length&&drop[oS[j]])j++;const b=bound(j),L=b.end?-1:b.L!=null?b.L:lineAt(b.p);
+        place(b,{ty:'c',x,lab:lab(L<0?2:L===0?0:1)})}}
+    ti++});
   const res=[];out.forEach((x,i)=>{res.push(...before[i],x)});res.push(...after);
   cur.lines=res;cur.raw=null;
 }
