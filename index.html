@@ -1574,7 +1574,11 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();instEv=e});
 window.addEventListener('appinstalled',()=>{instEv=null;toast('אקורדי הותקנה במסך הבית');if(v==='set')render()});
 async function installApp(){
   if(instEv){const e=instEv;instEv=null;try{e.prompt();const c=await e.userChoice;if(c&&c.outcome==='accepted')return}catch(err){}return}
-  if(isIOS){dlg({title:'התקנה באייפון',text:'בספארי: לחץ על כפתור השיתוף (ריבוע עם חץ למעלה) ← "הוסף למסך הבית" ← "הוסף".'+(acct?'':' שים לב: באייפון לאפליקציה המותקנת יש אחסון נפרד מהדפדפן. כדי שהשירים יעברו, התחבר עם Google לפני ההתקנה, או גבה אותם לקובץ וייבא אותם באפליקציה.'),ok:'הבנתי',noCancel:true});return}
+  if(isIOS){const ua=navigator.userAgent,
+      how=/CriOS/.test(ua)?'בכרום: לחץ על כפתור השיתוף בשורת הכתובת למעלה (ריבוע עם חץ) ← "הוסף למסך הבית". אם האפשרות לא מופיעה, פתח את הקישור בספארי.'
+        :/FxiOS|EdgiOS|OPiOS|OPT\//.test(ua)?'לחץ על כפתור השיתוף ← "הוסף למסך הבית". אם האפשרות לא מופיעה, פתח את הקישור בספארי.'
+        :'בספארי: לחץ על כפתור השיתוף (ריבוע עם חץ למעלה) ← "הוסף למסך הבית" ← "הוסף".';
+    dlg({title:'התקנה באייפון',text:how+(acct?'':' שים לב: באייפון לאפליקציה המותקנת יש אחסון נפרד מהדפדפן. כדי שהשירים יעברו, התחבר עם Google לפני ההתקנה, או גבה אותם לקובץ וייבא אותם באפליקציה.'),ok:'הבנתי',noCancel:true});return}
   dlg({title:'התקנה במסך הבית',text:'בתפריט של הדפדפן בחר "התקן אפליקציה" או "הוסף למסך הבית".',ok:'הבנתי',noCancel:true});
 }
 window.addEventListener('online',()=>{if(acct){if(tokOk())syncNow();else setCloud('need')}});
