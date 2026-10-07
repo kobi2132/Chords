@@ -1288,7 +1288,7 @@ function settings(){
     const d=new Date(),p2=n=>String(n).padStart(2,'0'),nm='chords-backup-'+d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())+'.json';
     const r=await saveFile(nm,JSON.stringify({app:'chords',v:1,date:d.toISOString(),ins:prefIns,folders:FOL,songs:S}),false);
     msg.textContent=r==='ok'?'הגיבוי נשמר ('+S.length+' שירים).':r==='declined'?'הגיבוי בוטל.':'לא הצלחתי לשמור את הקובץ כאן.'},'b pr');
-  const r=el('div','row');r.append(bb,btn('ייבוא קובץ (גיבוי או תיקייה)',()=>fi.click(),'b'));
+  const r=el('div','row');r.append(bb,btn('ייבוא קובץ',()=>fi.click(),'b'));
   sec.append(el('h2','sh','גיבוי ושחזור'),el('div','hint','הגיבוי שומר את כל השירים בקובץ אחד. בייבוא קובץ (גיבוי, או תיקייה שמישהו שלח לך), שירים חדשים מתווספים, ושיר שקיים בשני המקומות נשמר בגרסה שנערכה אחרונה.'),r,msg,fi);
   A.append(top,prefsSection(),accountSection(),sec);
 }
