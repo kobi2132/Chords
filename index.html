@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>אקורדי</title>
 <link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#f3f5f8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="אקורדי">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <script>try{var th=localStorage.getItem('chords_theme');if(th==='light'||th==='dark')document.documentElement.dataset.theme=th}catch(e){}</script>
 <style>
 :root{color-scheme:light dark}:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
@@ -190,7 +197,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 .lim{text-align:start;font-size:.82rem;color:var(--mut);margin:10px auto 0;padding-inline-start:1.2em;max-width:340px}.lim li{margin:3px 0}
 .chk{display:flex;gap:8px;align-items:flex-start;text-align:start;font-size:.9rem;margin:12px 0}.chk input{margin-top:3px}
 .acc{background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:12px;margin:8px 0}
-.cld.need{color:#d97706;border-color:#d97706}.cld.err{color:#dc2626;border-color:#dc2626}
+.cld.need{color:#d97706;border-color:#d97706}.cld.off{color:var(--mut)}.cld.err{color:#dc2626;border-color:#dc2626}
 .cld.busy svg{animation:pul 1s ease-in-out infinite}@keyframes pul{50%{opacity:.35}}
 @media (prefers-reduced-motion:reduce){.cld.busy svg{animation:none}}
 .nudge{display:flex;align-items:center;gap:8px;background:var(--hl);border-radius:10px;padding:10px 12px;margin:4px 0 10px;font-size:.9rem}.nudge span{flex:1}
@@ -225,6 +232,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 .sec{padding:6px 0}.sh{font-size:1.05rem;margin:16px 0 4px}
 .sec .row .b{flex:1}
 .bnr{display:flex;align-items:center;gap:10px;background:var(--hl);border-radius:10px;padding:10px 12px;margin:4px 0 10px}.bnr span{flex:1}
+.upd{position:fixed;bottom:calc(90px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:var(--fg);color:var(--bg);padding:8px 8px 8px 14px;border-radius:12px;z-index:29;font-size:.9rem;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.2)}.upd .b{min-height:34px;padding:4px 12px}
 .toast{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:10px;z-index:30;font-size:.9rem;max-width:calc(100vw - 32px)}
 .tb{display:flex;flex-direction:column;gap:8px}
 .tr1{display:flex;align-items:center;gap:10px;max-width:732px;margin:0 auto;width:100%}
@@ -577,7 +585,7 @@ function dlg(o){return new Promise(res=>{
   const okb=o.icons?ibt('ok',ok,'b ic '+(o.danger?'danger':'pr'),o.ok||'אישור'):btn(o.ok||'אישור',ok,'b '+(o.danger?'danger':'pr'));
   if(o.check){const lb=el('label','chk');cb=el('input');cb.type='checkbox';cb.checked=!!o.check.on;lb.append(cb,el('span','',o.check.label));d.append(lb);
     if(o.check.ok)cb.onchange=()=>{okb.textContent=cb.checked?o.check.ok:(o.ok||'אישור');okb.className='b '+(cb.checked||o.danger?'danger':'pr')}}
-  const b=el('div','dlgb');if(o.alt)b.append(btn(o.alt,()=>done(o.check?{alt:true,checked:!!(cb&&cb.checked)}:'alt'),'b pr'));b.append(okb,o.icons?ibt('close',()=>done(null),'b ic',o.cancel||'ביטול'):btn(o.cancel||'ביטול',()=>done(null),'b'));
+  const b=el('div','dlgb');if(o.alt)b.append(btn(o.alt,()=>done(o.check?{alt:true,checked:!!(cb&&cb.checked)}:'alt'),'b pr'));b.append(okb);if(!o.noCancel)b.append(o.icons?ibt('close',()=>done(null),'b ic',o.cancel||'ביטול'):btn(o.cancel||'ביטול',()=>done(null),'b'));
   d.append(b);w.append(d);w.onclick=e=>{if(e.target===w)done(null)};document.body.append(w);
   document.addEventListener('keydown',kd,true);dlgClose=done;
   setTimeout(()=>{if(inp){inp.focus();inp.select()}else b.firstChild.focus()},30);
@@ -615,7 +623,7 @@ function list(){
   const hdr=el('div','hdr'),icr=el('div','icr');
   icr.append(ibt('film',()=>{galSong=null;v='gal';render()},'b ic','הסרטונים שלי'),ibt('gear',()=>{v='set';render()},'b ic','הגדרות'));
   const mt0=el('span','mt'),ml=el('img','mlogo');ml.src='icon.svg';ml.alt='';mt0.append(ml,'אקורדי');mt0.setAttribute('aria-hidden','true');icr.prepend(mt0);icr.classList.add('stk');
-  if(acct){const cb=ibt('cloud',()=>{if(cloudSt==='need'||cloudSt==='err')signIn(false);else{v='set';render()}},'b ic cld');cb.id='cloudBtn';icr.insertBefore(cb,icr.children[1]||null);paintCloud()}
+  if(acct){const cb=ibt('cloud',()=>{if(cloudSt==='off'){toast('אין חיבור לאינטרנט. השירים נשמרים בטלפון ויסונכרנו כשהחיבור יחזור',3500);return}if(cloudSt==='need'||cloudSt==='err')signIn(false);else{v='set';render()}},'b ic cld');cb.id='cloudBtn';icr.insertBefore(cb,icr.children[1]||null);paintCloud()}
   const brd=el('div','brand'),blg=el('img','blogo'),btx=el('div','btx'),h10=el('h1','sti','אקורדי');blg.src='icon.svg';blg.alt='';btx.append(h10);
   if(myName())btx.append(el('p','hello','שלום, '+myName()));
   brd.append(blg,btx);hdr.append(brd);
@@ -1032,12 +1040,12 @@ const saveDel=()=>{try{localStorage.setItem('chords_del',JSON.stringify(DEL))}ca
 const saveAcct=()=>{try{acct?localStorage.setItem('chords_acct',JSON.stringify(acct)):localStorage.removeItem('chords_acct')}catch(e){}};
 const welSeen=()=>{try{return localStorage.getItem('chords_wel')==='1'}catch(e){return true}};
 const setWel=()=>{try{localStorage.setItem('chords_wel','1')}catch(e){}};
-function markDirty(){try{localStorage.setItem('chords_dirty','1')}catch(e){}if(!acct)return;clearTimeout(pushT);pushT=setTimeout(()=>{if(tokOk())syncNow();else setCloud('need')},3000)}
+function markDirty(){try{localStorage.setItem('chords_dirty','1')}catch(e){}if(!acct)return;clearTimeout(pushT);pushT=setTimeout(()=>{if(!navigator.onLine)setCloud('off');else if(tokOk())syncNow();else setCloud('need')},3000)}
 const isDirty=()=>{try{return localStorage.getItem('chords_dirty')==='1'}catch(e){return false}};
 const tokOk=()=>tok&&Date.now()<tokExp;
 function setCloud(s){cloudSt=s;paintCloud()}
 function paintCloud(){const b=document.getElementById('cloudBtn');if(!b)return;
-  const m={ok:['cloudOk','מסונכרן עם Google Drive'],busy:['cloud','מסנכרן...'],need:['cloudNeed','לחץ לסנכרון'],err:['cloudNeed','הסנכרון נכשל. לחץ לנסות שוב']}[cloudSt]||['cloud',''];
+  const m={off:['cloudNeed','אין חיבור לאינטרנט. הסנכרון ימשיך כשהחיבור יחזור'],ok:['cloudOk','מסונכרן עם Google Drive'],busy:['cloud','מסנכרן...'],need:['cloudNeed','לחץ לסנכרון'],err:['cloudNeed','הסנכרון נכשל. לחץ לנסות שוב']}[cloudSt]||['cloud',''];
   b.innerHTML=IB[m[0]];b.setAttribute('aria-label',m[1]);b.title=m[1];b.className='b ic cld '+cloudSt}
 function loadGIS(){if(gisP)return gisP;gisP=new Promise((res,rej)=>{if(window.google&&google.accounts&&google.accounts.oauth2)return res();const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=()=>res();s.onerror=()=>{gisP=null;rej()};document.head.append(s)});return gisP}
 const REDIR=location.origin+location.pathname.replace(/index\.html$/,'');
@@ -1081,7 +1089,7 @@ function mergeRemote(o){
   return ch;
 }
 async function syncNow(){
-  if(!acct)return;if(!tokOk()){setCloud('need');return}
+  if(!acct)return;if(!navigator.onLine){setCloud('off');return}if(!tokOk()){setCloud('need');return}
   if(syncing){clearTimeout(pushT);pushT=setTimeout(syncNow,1500);return}
   syncing=true;setCloud('busy');
   try{
@@ -1097,7 +1105,7 @@ async function syncNow(){
       await gfetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+bd},body:mp})}
     try{localStorage.removeItem('chords_dirty')}catch(e){}
     setCloud('ok');
-  }catch(e){setCloud(e&&e.message==='auth'?'need':'err')}
+  }catch(e){setCloud(!navigator.onLine?'off':e&&e.message==='auth'?'need':'err')}
   finally{syncing=false}
 }
 function signOut(){
@@ -1168,9 +1176,10 @@ function prefsSection(){
   const cur0=(()=>{try{return localStorage.getItem('chords_theme')||'auto'}catch(e){return'auto'}})(),tg=el('div','seg thm');
   [['light','בהיר'],['dark','כהה'],['auto','לפי הטלפון']].forEach(([k,x])=>{const b=el('button',k===cur0?'on':'',x);b.setAttribute('aria-pressed',k===cur0?'true':'false');
     b.onclick=()=>{try{k==='auto'?localStorage.removeItem('chords_theme'):localStorage.setItem('chords_theme',k)}catch(e){}
-      if(k==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=k;
+      if(k==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=k;syncTC();
       [...tg.children].forEach(c=>{c.classList.toggle('on',c===b);c.setAttribute('aria-pressed',c===b?'true':'false')})};tg.append(b)});
   s.append(el('div','lbl','תצוגה'),tg);
+  if(!isStandalone()){s.append(el('div','lbl','אפליקציה'),btn('התקן את אקורדי במסך הבית',installApp,'b'))}
   s.append(el('div','lbl','שיר לדוגמה'),btn('הוסף את השיר לדוגמה',()=>{if(addDemo(true))toast('השיר "ברוכים הבאים" נוסף לשירים שלך');else toast('השיר לדוגמה כבר נמצא בשירים שלך')},'b'));
   return s;
 }
@@ -1556,6 +1565,37 @@ if(acct){if(!isIOS)loadGIS().catch(()=>{});if(!tokOk())setCloud('need')}
   const upd=()=>{st.setProperty('--vvh',vv.height+'px');st.setProperty('--vvt',vv.offsetTop+'px');st.setProperty('--kb',Math.max(0,innerHeight-vv.height-vv.offsetTop)+'px')};
   vv.addEventListener('resize',upd);vv.addEventListener('scroll',upd);upd()})();
 try{fixDemoArtist()}catch(e){}
+// ===== אפליקציה מותקנת: צבע שורת סטטוס, התקנה, עבודה בלי אינטרנט ועדכון גרסה =====
+function syncTC(){const m=document.querySelector('meta[name=theme-color]');if(m)try{m.content=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()||'#f3f5f8'}catch(e){}}
+syncTC();try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',syncTC)}catch(e){}
+function isStandalone(){try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}}
+let instEv=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();instEv=e});
+window.addEventListener('appinstalled',()=>{instEv=null;toast('אקורדי הותקנה במסך הבית');if(v==='set')render()});
+async function installApp(){
+  if(instEv){const e=instEv;instEv=null;try{e.prompt();const c=await e.userChoice;if(c&&c.outcome==='accepted')return}catch(err){}return}
+  if(isIOS){dlg({title:'התקנה באייפון',text:'בספארי: לחץ על כפתור השיתוף (ריבוע עם חץ למעלה) ← "הוסף למסך הבית" ← "הוסף".'+(acct?'':' שים לב: באייפון לאפליקציה המותקנת יש אחסון נפרד מהדפדפן. כדי שהשירים יעברו, התחבר עם Google לפני ההתקנה, או גבה אותם לקובץ וייבא אותם באפליקציה.'),ok:'הבנתי',noCancel:true});return}
+  dlg({title:'התקנה במסך הבית',text:'בתפריט של הדפדפן בחר "התקן אפליקציה" או "הוסף למסך הבית".',ok:'הבנתי',noCancel:true});
+}
+window.addEventListener('online',()=>{if(acct){if(tokOk())syncNow();else setCloud('need')}});
+window.addEventListener('offline',()=>{if(acct&&!syncing)setCloud('off')});
+let updShown=false,updGo=false;
+function showUpd(reg){
+  if(updShown)return;updShown=true;
+  const b=el('div','upd');b.setAttribute('role','status');b.append(el('span','','יש גרסה חדשה של אקורדי'),btn('רענן',()=>{updGo=true;const w=reg.waiting;if(w)w.postMessage('skip');else location.reload()},'b pr'));
+  document.body.append(b);
+}
+if('serviceWorker' in navigator&&location.protocol!=='file:'){
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(updGo){updGo=false;location.reload()}});
+  navigator.serviceWorker.register('sw.js').then(reg=>{
+    if(reg.waiting&&navigator.serviceWorker.controller)showUpd(reg);
+    reg.addEventListener('updatefound',()=>{const w=reg.installing;if(w)w.addEventListener('statechange',()=>{if(w.state==='installed'&&navigator.serviceWorker.controller)showUpd(reg)})});
+    const chk=()=>{if(navigator.onLine)reg.update().catch(()=>{})};
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')chk()});
+    setInterval(chk,30*60*1000);
+  }).catch(()=>{});
+}
+
 render();
 (async()=>{try{const sh=await readLink();if(sh){incoming=sh;cur=sh;t=0;v='vw';try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}render()}}catch(e){}})();
 </script>
