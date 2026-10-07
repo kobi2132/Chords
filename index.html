@@ -453,13 +453,65 @@ function sync(){
   if(!cur.dset)cur.dir=detect(cur.raw);
   const oT=cur.lines.filter(l=>l.ty!=='c'),cl=[];let n=0;
   cur.lines.forEach(l=>{l.ty==='c'?cl.push({a:n,l}):n++});
-  const nT=cur.raw.replace(/\r/g,'').split('\n').map((x,i)=>{
-    const o=oT[i],m=chars(x).length;
-    return{t:x,c:o?(o.t===x?o.c:Object.fromEntries(Object.entries(o.c).filter(([k])=>+k<=m))):{}}});
-  const out=[];
-  nT.forEach((x,i)=>{cl.filter(z=>z.a===i).forEach(z=>out.push(z.l));out.push(x)});
-  cl.filter(z=>z.a>=nT.length).forEach(z=>out.push(z.l));
-  cur.lines=out;cur.raw=null;
+  const nTx=cur.raw.replace(/\r/g,'').split('\n'),A=chars(oT.map(l=>l.t).join('\n')),B=chars(nTx.join('\n'));
+  // מיקום תחילת כל שורה, בטקסט הישן ובחדש
+  const oS=[],nS=[],nL=nTx.map(x=>chars(x).length);let q=0;oT.forEach(l=>{oS.push(q);q+=chars(l.t).length+1});q=0;nL.forEach(x=>{nS.push(q);q+=x+1});
+  const {m,drop}=lineMap(oT.map(l=>l.t),nTx,oS,nS,A,B),ins=new Int32Array(A.length+1);ins[A.length]=B.length;
+  for(let i=A.length-1;i>=0;i--)ins[i]=m[i]>=0?m[i]:ins[i+1];
+  // תו שנמחק: אם במקומו נכנס תו אחר (החלפת אות) – לתו החדש, אחרת לתו הבא ששרד
+  const pm=new Int32Array(A.length);{let lj=-1;for(let i=0;i<A.length;i++){pm[i]=lj<0?i:m[lj]+(i-lj);if(m[i]>=0)lj=i}}
+  const tgt=o=>m[o]>=0?m[o]:pm[o]<ins[o]?pm[o]:ins[o];
+  const lineAt=p=>{let L=0;while(L<nS.length-1&&nS[L+1]<=p)L++;return L};
+  const out=nTx.map(t=>({t,c:{}})),before=nTx.map(()=>[]),after=[];
+  const put=(L,k,ch)=>{const c=out[L].c;if(k===-1&&c[-1]){k=0}c[k]=c[k]?c[k]+' '+ch:ch};
+  // אקורד על אות במיקום p בטקסט החדש (אם p נופל על רווח או סוף שורה – לאות הקרובה)
+  const onChar=(p,ch,skip)=>{if(p>=B.length)p=Math.max(0,B.length-1);let L=lineAt(p),col=p-nS[L];
+    if(skip)while(col<nL[L]&&B[nS[L]+col]===' ')col++;
+    if(col>=nL[L])col=nL[L]?nL[L]-1:0;put(L,col,ch)};
+  // גבול של תחילת שורה ישנה i: מחזיר {L} אם השורה עדיין מתחילה שורה, אחרת {p} מיקום באמצע שורה
+  const bound=i=>{if(i>=oT.length)return{end:1};
+    const f=oT[i].t.length&&m[oS[i]]>=0?m[oS[i]]:-1;if(f>=0){const L=lineAt(f);return f===nS[L]?{L}:{p:f}}
+    if(i===0)return{L:0};const nl=oS[i]-1;return m[nl]>=0?{L:lineAt(m[nl]+1)}:{p:ins[nl]}};
+  oT.forEach((l,i)=>{const len=chars(l.t).length;
+    Object.keys(l.c).forEach(k=>{const ch=l.c[k];if(!ch)return;k=+k;
+      if(drop[oS[i]+Math.min(Math.max(k,0),len)])return;
+      if(k===-1){const b=bound(i);b.L!=null?put(b.L,-1,ch):b.end?put(out.length-1,-1,ch):onChar(b.p,ch,true);return}
+      if(k>=len){const nl=oS[i]+len;
+        if(nl>=A.length||m[nl]>=0){const L=nl>=A.length?out.length-1:lineAt(m[nl]);put(L,nL[L],ch)}else{let p=ins[nl];if(p>0&&B[p-1]===' ')p--;onChar(p,ch,false)}return}
+      const o=oS[i]+k;onChar(tgt(o),ch,false)})});
+  cl.forEach(z=>{const b=bound(z.a);if(b.end)after.push(z.l);else before[b.L!=null?b.L:lineAt(b.p)].push(z.l)});
+  const res=[];out.forEach((x,i)=>{res.push(...before[i],x)});res.push(...after);
+  cur.lines=res;cur.raw=null;
+}
+// השוואה ברמת שורות: שורות זהות מותאמות אחת לאחת, ורק בקטעים שהשתנו משווים תו-תו. שורה שנמחקה כולה מסומנת ב-drop
+function lineMap(oL,nL,oS,nS,A,B){
+  const m=new Int32Array(A.length).fill(-1),drop=new Uint8Array(A.length+1),a=oL.length,b=nL.length,W=b+1,D=new Uint16Array((a+1)*W);
+  for(let i=a-1;i>=0;i--)for(let j=b-1;j>=0;j--)D[i*W+j]=oL[i]===nL[j]?D[(i+1)*W+j+1]+1:Math.max(D[(i+1)*W+j],D[i*W+j+1]);
+  const pairs=[];let i=0,j=0;while(i<a&&j<b){if(oL[i]===nL[j]){pairs.push([i,j]);i++;j++}else if(D[(i+1)*W+j]>=D[i*W+j+1])i++;else j++}
+  pairs.push([a,b]);let pi=-1,pj=-1;
+  const end=(S,L,k)=>S[k]+chars(L[k]).length;
+  pairs.forEach(([ci,cj])=>{
+    const i0=pi+1,j0=pj+1;
+    if(ci>i0){const s=oS[i0],e=end(oS,oL,ci-1);
+      if(cj>j0){const t=nS[j0],f=end(nS,nL,cj-1),mm=lcsMap(A.slice(s,e),B.slice(t,f));mm.forEach((x,k)=>{if(x>=0)m[s+k]=t+x})}
+      else for(let k=s;k<=e;k++)drop[k]=1;}
+    if(ci<a){const s=oS[ci],t=nS[cj],n=chars(oL[ci]).length;for(let k=0;k<n;k++)m[s+k]=t+k;
+      if(ci<a-1&&cj<b-1)m[s+n]=t+n;
+      if(ci>0&&cj>0&&!drop[s-1])m[s-1]=t-1;}
+    pi=ci;pj=cj});
+  return{m,drop};
+}
+// השוואה בין טקסט ישן לחדש: לכל תו ישן – המיקום שלו בטקסט החדש, או -1 אם נמחק
+function lcsMap(a,b){
+  const m=new Int32Array(a.length).fill(-1);let p=0,s=0;
+  while(p<a.length&&p<b.length&&a[p]===b[p]){m[p]=p;p++}
+  while(s<a.length-p&&s<b.length-p&&a[a.length-1-s]===b[b.length-1-s]){m[a.length-1-s]=b.length-1-s;s++}
+  const n=a.length-p-s,k=b.length-p-s;if(!n||!k)return m;
+  if(n*k>4e6){for(let i=0;i<n;i++)m[p+i]=p+Math.min(k-1,Math.floor(i*k/n));return m}
+  const W=k+1,D=new Uint16Array((n+1)*W);
+  for(let i=n-1;i>=0;i--)for(let j=k-1;j>=0;j--)D[i*W+j]=a[p+i]===b[p+j]?D[(i+1)*W+j+1]+1:Math.max(D[(i+1)*W+j],D[i*W+j+1]);
+  let i=0,j=0;while(i<n&&j<k){if(a[p+i]===b[p+j]){m[p+i]=p+j;i++;j++}else if(D[(i+1)*W+j]>=D[i*W+j+1])i++;else j++}
+  return m;
 }
 
 const heartBtn=(s,cls)=>{const b=ibt('heart',e=>{e.stopPropagation();s.fav=!s.fav||undefined;s.upd=Date.now();sv();upd()},cls);
