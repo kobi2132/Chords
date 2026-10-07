@@ -365,9 +365,7 @@ function rc(l,dir,edit,li){
   if(first&&(edit||hasC)){const a=el('span','','→');a.title='האקורדים נקראים משמאל לימין';a.setAttribute('aria-label','האקורדים נקראים משמאל לימין');hd.append(a)}
   if(hd.childNodes.length)d.append(hd);
   const r=el('div','cx');
-  let prevX=null;const sOn=!edit&&simpOn();
   l.x.forEach((c,j)=>{
-    if(sOn){const d0=tr(c);if(d0===prevX)return;prevX=d0}
     const b=el(edit?'button':'span','cc'+(edit?' b':''),tr(c));
     if(!edit)b.onclick=e=>{e.stopPropagation();onChord&&onChord(tr(c),b)};
     if(edit){b.onclick=()=>{pk=Object.assign({li,k:'x',j},pp(c));render()};if(pk&&pk.li===li&&pk.j===j)b.classList.add('on')}
@@ -407,10 +405,8 @@ function rl(l,dir,edit,li){
   if(l.ty==='c')return rc(l,dir,edit,li);
   const d=el('div','ln'+(edit?' ed':'')),cs=chars(l.t);d.dir=dir;
   if(edit||Object.keys(l.c).some(k=>+k<=cs.length&&l.c[k]))d.classList.add('hc');
-  let hid=null;
-  if(!edit&&simpOn()){hid=new Set();let prev=null;Object.keys(l.c).map(Number).sort((a,b)=>a-b).forEach(k=>lc(l,k).forEach((z,n)=>{const d=tr(z);if(d===prev)hid.add(k+':'+n);prev=d}))}
   const cell=(i,x,slot)=>{
-    const a0=lc(l,i),c=el('span','cl'+(slot?' sl '+slot:'')),a=hid?a0.filter((z,n)=>!hid.has(i+':'+n)):a0;
+    const c=el('span','cl'+(slot?' sl '+slot:'')),a=lc(l,i);
     c.dataset.k=i;
     if(a.length){const h=el('span','ch');a.forEach((z,n)=>{const q=el('span','cd',tr(z));if(edit)drag(q,li,i,n,z);else q.onclick=e=>{e.stopPropagation();onChord&&onChord(tr(z),q)};h.append(q)});c.append(h)}
     c.append(el('span','tx',x));
