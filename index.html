@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ספר האקורדים שלי</title>
+<script>try{var th=localStorage.getItem('chords_theme');if(th==='light'||th==='dark')document.documentElement.dataset.theme=th}catch(e){}</script>
 <style>
+:root{color-scheme:light dark}:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 :root{--bg:#f3f5f8;--fg:#111c27;--mut:#66727f;--ch:#3730a3;--cd:#fff;--bd:#d6dce4;--hl:#e0e7ff;--gbg:#dcfce7;--gfg:#166534;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10141b;--fg:#e8edf3;--mut:#93a0ad;--ch:#7dd3fc;--cd:#18202b;--bd:#2c3745;--hl:#1e3a5f;--gbg:#143323;--gfg:#86efac}}
 :root[data-theme="dark"]{--bg:#10141b;--fg:#e8edf3;--mut:#93a0ad;--ch:#7dd3fc;--cd:#18202b;--bd:#2c3745;--hl:#1e3a5f;--gbg:#143323;--gfg:#86efac}
@@ -164,6 +166,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 .seg{display:inline-flex;align-items:stretch;border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--cd);height:40px}
 .seg>*{border:0;border-radius:0;background:none;color:var(--fg);font:inherit;display:flex;align-items:center;justify-content:center;padding:0 12px;cursor:pointer;margin:0}
 .seg>*+*{border-inline-start:1px solid var(--bd)}
+.seg>.on{background:var(--hl);color:var(--ch);font-weight:600}
 .seg>*:focus-visible{outline:2px solid var(--ch);outline-offset:-2px}
 .seg .val{min-width:44px;flex-direction:column;line-height:1.05;padding:0 8px}
 .seg .val small{font-size:10px;color:var(--mut)}.seg .val b{direction:ltr;unicode-bidi:isolate;font-size:15px}
@@ -1128,6 +1131,13 @@ function prefsSection(){
   const nm=el('input','f');nm.maxLength=40;nm.value=myName();nm.setAttribute('aria-label','שם תצוגה');
   nm.onchange=()=>{const n=nm.value.trim().slice(0,40);if(acct){acct.dname=n||acct.dname;acct.upd=Date.now();saveAcct();markDirty()}else{gname=n;try{localStorage.setItem('chords_name',gname)}catch(e){}}};
   s.append(el('label','lbl','שם תצוגה'),nm,el('div','lbl','כלי נגינה מועדף'),insPicker(prefIns,k=>{ins=k;setPrefs({ins:k})}));
+  // תצוגה: בהיר / כהה / לפי הטלפון – נשמר רק במכשיר הזה
+  const cur0=(()=>{try{return localStorage.getItem('chords_theme')||'auto'}catch(e){return'auto'}})(),tg=el('div','seg thm');
+  [['light','בהיר'],['dark','כהה'],['auto','לפי הטלפון']].forEach(([k,x])=>{const b=el('button',k===cur0?'on':'',x);b.setAttribute('aria-pressed',k===cur0?'true':'false');
+    b.onclick=()=>{try{k==='auto'?localStorage.removeItem('chords_theme'):localStorage.setItem('chords_theme',k)}catch(e){}
+      if(k==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=k;
+      [...tg.children].forEach(c=>{c.classList.toggle('on',c===b);c.setAttribute('aria-pressed',c===b?'true':'false')})};tg.append(b)});
+  s.append(el('div','lbl','תצוגה'),tg);
   s.append(el('div','lbl','שיר לדוגמה'),btn('הוסף את השיר לדוגמה',()=>{if(addDemo(true))toast('השיר "ברוכים הבאים" נוסף לשירים שלך');else toast('השיר לדוגמה כבר נמצא בשירים שלך')},'b'));
   return s;
 }
