@@ -171,6 +171,7 @@ textarea.f.nta{min-height:0;line-height:1.4;resize:vertical}
 input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-search-decoration{-webkit-appearance:none;appearance:none;display:none}
 .dlg .plist{max-height:min(45vh,340px);overflow-y:auto;margin:6px 0 12px}
 .dlg .pick{margin:4px 0;padding:8px 10px}
+.ipk .ipt{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 4px}.ipk .ipc{color:var(--mut);font-size:.9rem}.ipk .ipx{font-size:.75rem;color:var(--mut);border:1px solid var(--bd);border-radius:6px;padding:1px 6px;white-space:nowrap}.ipk .b:disabled{opacity:.5;cursor:default}
 .nfr{display:flex;gap:6px;margin:4px 0}.nfr .f{margin:0;flex:1}
 .fpb{display:flex;align-items:center;gap:8px;text-align:start;width:100%}.fpb svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;flex:none}
 .fpb small{display:block;color:var(--mut);font-size:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.fpb .n{flex:1;min-width:0}
@@ -621,6 +622,31 @@ function folderPicker(s,after){
   d.append(nfr,pl,b);w.append(d);w.onclick=e=>{if(e.target===w)done()};document.body.append(w);
   document.addEventListener('keydown',kd,true);dlgClose=()=>done();draw();
 }
+// חלון בחירת שירים בייבוא מקובץ (תיקייה ששלחו לך או גיבוי): כולם מסומנים מראש; שיר שכבר קיים מסומן רק אם הגרסה בקובץ חדשה יותר
+function importPick(arr,fl){return new Promise(res=>{
+  if(dlgClose)dlgClose(null);
+  const w=el('div','dlgw'),d=el('div','dlg ipk');d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
+  const fn=fl.length===1?fl[0].name:null;
+  d.append(el('h3','',fn?'ייבוא התיקייה "'+fn+'"':'ייבוא שירים'));
+  const ex=x=>S.find(y=>y.id===x.id),newer=x=>{const e=ex(x);return !e||(x.upd||0)>(e.upd||0)};
+  const sel=new Set(arr.filter(newer).map(x=>x.id));
+  const tb=el('div','ipt'),cnt=el('span','ipc'),all=btn('',()=>{if(sel.size===arr.length)sel.clear();else arr.forEach(x=>sel.add(x.id));draw()},'b');
+  tb.append(cnt,all);
+  const pl=el('div','plist'),boxes=[];
+  arr.forEach(x=>{const r=el('label','pick'),c=el('input');c.type='checkbox';
+    c.onchange=()=>{if(c.checked)sel.add(x.id);else sel.delete(x.id);draw()};
+    const n=el('span','n',x.title||'(בלי שם)');if(x.artist)n.append(el('small','',x.artist));
+    r.append(c,n);const e=ex(x);if(e)r.append(el('span','ipx',newer(x)?'קיים – יעודכן':'כבר קיים'));
+    pl.append(r);boxes.push([c,x.id])});
+  const done=v2=>{w.remove();document.removeEventListener('keydown',kd,true);dlgClose=null;res(v2)};
+  const kd=e=>{if(e.key==='Escape'){e.preventDefault();done(null)}};
+  const okb=btn('',()=>{if(sel.size)done(new Set(sel))},'b pr');
+  const b=el('div','dlgb');b.append(okb,btn('ביטול',()=>done(null),'b'));
+  function draw(){boxes.forEach(([c,id])=>c.checked=sel.has(id));cnt.textContent='נבחרו '+sel.size+' מתוך '+arr.length;
+    all.textContent=sel.size===arr.length?'נקה הכל':'בחר הכל';okb.textContent=sel.size?'ייבא ('+sel.size+')':'ייבא';okb.disabled=!sel.size}
+  d.append(tb,pl,b);w.append(d);w.onclick=e=>{if(e.target===w)done(null)};document.body.append(w);
+  document.addEventListener('keydown',kd,true);dlgClose=()=>done(null);draw();setTimeout(()=>okb.focus(),30);
+})}
 function newFolder(after){dlg({title:'תיקייה חדשה',input:'',max:40,ok:'צור',icons:true}).then(n=>{if(!n)return;const f={id:Date.now(),name:n.slice(0,40)};FOL.push(f);folChanged();if(after)after(f)})}
 let titleObs=null;
 function stickTitle(bar,h1,mt){
@@ -995,10 +1021,14 @@ async function saveFile(name,data,share){
   try{const a=el('a'),u=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);return 'ok'}catch(e){return 'fail'}
 }
 const okSong=x=>x&&x.id!=null&&typeof x.title==='string'&&Array.isArray(x.lines)&&x.lines.every(l=>l&&(l.ty==='c'?Array.isArray(l.x):typeof l.t==='string'&&l.c&&typeof l.c==='object'));
-function mergeSongs(arr){let a=0,u=0,k=0,bad=0;
+// force: מזהים של שירים קיימים שהמשתמש בחר לעדכן גם אם הגרסה בקובץ לא חדשה יותר. keep: שומר את התיקיות והמועדפים המקומיים של שיר שמתעדכן
+function mergeSongs(arr,o){o=o||{};let a=0,u=0,k=0,bad=0;
   arr.forEach(x=>{if(!okSong(x)){bad++;return}const i=S.findIndex(y=>y.id===x.id);
     if(DEL[x.id]!=null){delete DEL[x.id];x.upd=Date.now();saveDel()}
-    if(i<0){S.push(x);a++}else if((x.upd||0)>(S[i].upd||0)){S[i]=x;u++}else k++});
+    if(i<0){S.push(x);a++}else if((x.upd||0)>(S[i].upd||0)||(o.force&&o.force.has(x.id))){
+      if(o.keep){const fo=[...new Set([...(S[i].fo||[]),...(x.fo||[])])];x.fo=fo.length?fo:undefined;if(S[i].fav)x.fav=S[i].fav;if(S[i].tp!=null&&x.tp==null)x.tp=S[i].tp}
+      if(o.force&&o.force.has(x.id)&&(x.upd||0)<=(S[i].upd||0))x.upd=Date.now();
+      S[i]=x;u++}else k++});
   sv();return{a,u,k,bad}}
 function parseBk(txt){const o=JSON.parse(txt),arr=Array.isArray(o)?o:o&&Array.isArray(o.songs)?o.songs:null;if(!arr)throw new Error('bad');return{arr,ins:o&&o.ins}}
 const b64=u=>{let b='';u.forEach(x=>b+=String.fromCharCode(x));return btoa(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
@@ -1361,11 +1391,19 @@ function settings(){
   const sec=el('div','sec'),msg=el('div','hint');
   const fi=el('input');fi.type='file';fi.accept='.json,application/json';fi.hidden=true;
   fi.onchange=async()=>{const f=fi.files[0];fi.value='';if(!f)return;
-    try{const txt=await f.text(),{arr,ins:i2}=parseBk(txt),r=mergeSongs(arr);
-      try{const fo=JSON.parse(txt).folders;if(Array.isArray(fo)){let add=0;fo.forEach(x=>{if(x&&x.id!=null&&typeof x.name==='string'&&!FOL.some(y=>y.id===x.id)){FOL.push({id:x.id,name:x.name});add++}});if(add)folChanged()}}catch(e){}
-      if(i2==='p'||i2==='g'||i2==='u'){ins=i2;prefIns=i2;savePrefs()}
-      msg.textContent='הייבוא הסתיים: '+r.a+' שירים נוספו, '+r.u+' עודכנו'+(r.k?', '+r.k+' נשארו כמו שהם':'')+(r.bad?', '+r.bad+' לא נקראו':'')+'.'}
-    catch(e){msg.textContent='הקובץ הזה לא נראה כמו גיבוי או שיר של האפליקציה.'}};
+    let txt,arr,i2,fo0;
+    try{txt=await f.text();({arr,ins:i2}=parseBk(txt));try{fo0=JSON.parse(txt).folders}catch(e){}}
+    catch(e){msg.textContent='הקובץ הזה לא נראה כמו גיבוי או שיר של האפליקציה.';return}
+    const ok0=arr.filter(okSong),bad=arr.length-ok0.length;
+    if(!ok0.length){msg.textContent='הקובץ הזה לא נראה כמו גיבוי או שיר של האפליקציה.';return}
+    const fl=Array.isArray(fo0)?fo0.filter(x=>x&&x.id!=null&&typeof x.name==='string'):[];
+    const pick=await importPick(ok0,fl);if(!pick){msg.textContent='הייבוא בוטל.';return}
+    const sel=ok0.filter(x=>pick.has(x.id)),force=new Set(sel.filter(x=>S.some(y=>y.id===x.id)).map(x=>x.id));
+    const r=mergeSongs(sel,{force,keep:true});
+    // תיקייה נוספת רק אם לפחות שיר אחד שנבחר שייך אליה
+    let add=0;fl.forEach(x=>{if(!FOL.some(y=>y.id===x.id)&&sel.some(z=>(z.fo||[]).includes(x.id))){FOL.push({id:x.id,name:x.name.slice(0,40)});add++}});if(add)folChanged();
+    if(i2==='p'||i2==='g'||i2==='u'){ins=i2;prefIns=i2;savePrefs()}
+    msg.textContent='הייבוא הסתיים: '+r.a+' שירים נוספו, '+r.u+' עודכנו'+(r.k?', '+r.k+' נשארו כמו שהם':'')+(bad?', '+bad+' לא נקראו':'')+'.'};
   const bb=btn('גבה את כל השירים',async()=>{
     if(!S.length){msg.textContent='אין עדיין שירים לגבות.';return}
     const d=new Date(),p2=n=>String(n).padStart(2,'0'),nm='chords-backup-'+d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())+'.json';
