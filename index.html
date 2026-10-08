@@ -267,7 +267,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 <div id="app"></div>
 <script>
 // מספר הגרסה מתעדכן אוטומטית בכל עדכון (git pre-commit)
-const APPV='0.70';
+const APPV='0.71';
 const verName=x=>/^\d+\.\d+$/.test(x||'')?'Akordi '+x:x?'beta':'–';
 let favOnly=false,galSong=null,incoming=null,S=[],v='list',cur=null,tab='l',pk=null,t=0,fs=18,sp=3,timer=null,tbc=false,pv='',ins='g',onChord=null,closeP=null;
 try{S=JSON.parse(localStorage.getItem('chords_songs')||'[]')}catch(e){}

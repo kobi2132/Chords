@@ -1,7 +1,7 @@
 // אקורדי – שומר את קבצי האפליקציה בטלפון כדי שתעבוד גם בלי אינטרנט.
 // VER – מספר הגרסה שמוצג (Akordi 0.N). V – קוד לפי תוכן הקבצים. שניהם מתעדכנים אוטומטית בכל עדכון (git pre-commit), וכך הטלפון יודע שיש גרסה חדשה.
-const VER='0.70';
-const V='9b7a2fbd6a';
+const VER='0.71';
+const V='4ce2c1a1a5';
 const C='akordi-'+VER+'_'+V;
 const ASSETS=['./','index.html','icon.svg','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png','fonts/Alef-Regular.ttf','fonts/Alef-Bold.ttf','fonts/OpenSans500-he.woff','vendor/jspdf.umd.min.js','privacy.html','terms.html','legal.css'];
 self.addEventListener('install',e=>{
@@ -19,8 +19,10 @@ self.addEventListener('fetch',e=>{
   e.respondWith((async()=>{
     const c=await caches.open(C);
     let hit=await c.match(r,{ignoreSearch:true});
-    if(!hit&&r.mode==='navigate'&&!/\.html$/.test(u.pathname))hit=await c.match('./');
+    // כתובת בלי סיומת קובץ (למשל /Chords/) נפתחת כאפליקציה; כתובת של קובץ (sw.js, changelog.json) מוצגת כמו שהיא
+    const page=!/\.[a-z0-9]+$/i.test(u.pathname);
+    if(!hit&&r.mode==='navigate'&&page)hit=await c.match('./');
     if(hit)return hit;
-    try{return await fetch(r)}catch(err){if(r.mode==='navigate'){const h=await c.match('./');if(h)return h}throw err}
+    try{return await fetch(r)}catch(err){if(r.mode==='navigate'&&page){const h=await c.match('./');if(h)return h}throw err}
   })());
 });
