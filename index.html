@@ -1583,6 +1583,8 @@ const CHRE=/^[A-G][#b]?(?:maj|min|m|M|dim|aug|sus|add|°|ø|\+|-)?\d*(?:(?:maj|s
 const CHFILL=/^(?:\||\|\||x\d+|\(x\d+\)|-+|\.+|%|\/)$/i;
 const LABRE=/^(?:פתיחה|בית|פזמון(?: חוזר)?|גשר|מעבר|סיום|סולו|קודה|אינטרו|intro|verse|chorus|pre-?chorus|bridge|outro|solo|interlude|instrumental|refrain|hook|coda|ending|break)(?:\s*\d+)?\s*:?$/i;
 function isChordLine(L){const tk=L.trim().split(/\s+/).filter(Boolean);return tk.length>0&&tk.some(x=>CHRE.test(x))&&tk.every(x=>CHRE.test(x)||CHFILL.test(x))}
+let measCF=null;
+function measC(){if(measCF)return measCF;const c=document.createElement('canvas').getContext('2d');c.font='100px Arial,"Liberation Sans","Noto Sans Hebrew",sans-serif';const m={};measCF=ch=>m[ch]!=null?m[ch]:(m[ch]=c.measureText(ch).width/100);return measCF}
 function parseChordText(txt,site){
   const raw=txt.replace(/\r/g,'').replace(/\u00a0/g,' ').replace(/\t/g,'    ').split('\n').map(l=>l.replace(/[\u200e\u200f\u202a-\u202e]/g,'').replace(/\s+$/,''));
   let cp;const meta=L=>{const m=L.match(/(?:capo|קאפו)\s*:?\s*(\d{1,2})/i);if(m&&+m[1]>0&&+m[1]<=12)cp=+m[1];return /^\s*(?:capo|קאפו|key|tuning|סולם|כיוון|tempo|bpm)\b|\]\(https?:/i.test(L)};
@@ -1607,15 +1609,13 @@ function parseChordText(txt,site){
       const ps2=[];const re2=/\S+/g;let m2;while((m2=re2.exec(cl)))if(CHRE.test(m2[0]))ps2.push([m2.index,m2[0]]);
       const Lc=Math.max(...ps2.map(([i,x])=>i+x.length)),tc=chars(t);
       if(prop){
-        // גופן משתנה (נגנו): השורה מוצגת מימין לשמאל – רווחים מובילים מימין, והאקורדים עצמם משמאל לימין.
-        // מרחק כל אקורד מהקצה הימני (ברווחים) מומר לרוחב אותיות: רווח-אקורד ≈ 0.62 אות, רווח בין מילים ≈ 0.33 אות.
-        const Ls=cl.length-cl.replace(/^ +/,'').length,pos=[];let X=0;
-        tc.forEach(ch=>{pos.push(X);X+=ch===' '?0.33:/[.,;:!?'"\-–()]/.test(ch)?0.4:1});
-        const wd=[];let m3;const re3=/\S+/g;const tj=tc.join('');while((m3=re3.exec(tj))){const a=chars(tj.slice(0,m3.index)).length,b=a+chars(m3[0]).length;wd.push([a,b])}
-        const tot=X;ps2.forEach(([i,x])=>{const d=(Ls+Lc-i-x.length)*0.62;let k=d<tot+1.5&&wd.length?wd[wd.length-1][0]:len;
-          for(let w=0;w<wd.length;w++){const a0=pos[wd[w][0]],a1=pos[wd[w][1]-1]+1;
-            if(d<a1){k=d<a0||(d-a0)/(a1-a0)<=0.75?wd[w][0]:(w+1<wd.length?wd[w+1][0]:wd[w][0]);break}}
-          put(k,x)});
+        // נגנו: השורה מוצגת מימין לשמאל (רווחים מובילים מימין). כל אקורד מוצג בתיבה רחבה, ולכן המרחק מהקצה הימני
+        // נמדד כך (ביחידות em של המילים): רווח ≈ 0.255, תו של אקורד ≈ 0.787, תיבה ≈ 0.089. כויל מול צילום של האתר.
+        const Ls=cl.length-cl.replace(/^ +/,'').length,mc=measC(),cw=tc.map(ch=>mc(ch)),pos=[];let X=0;cw.forEach(w=>{pos.push(X);X+=w});
+        const tk=ps2.slice().sort((a,b)=>b[0]-a[0]);let cc=0;
+        tk.forEach(([i,x],j)=>{const d=Ls+Lc-i-x.length,off=(d-cc)*0.255+cc*0.787+j*0.089+0.05;cc+=x.length;
+          let k=len;for(let q=0;q<len;q++)if(off<pos[q]+cw[q]){k=q;break}
+          while(k<len&&tc[k]===' ')k++;put(k,x)});
       }else ps2.forEach(([i,x])=>{let k=len-i-x.length;if(tc[k]===' ')k++;put(k,x)});
       return{t,c}}
     const clen=Math.max(...ps.map(([i,x])=>i+x.length)),sc=ps[ps.length-1][0]>len-1+3;
