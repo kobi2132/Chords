@@ -1596,6 +1596,14 @@ function isChordLine(L){const tk=L.trim().split(/\s+/).filter(Boolean);return tk
 let measCF=null,nagFont=null;
 function loadNagFont(){if(!nagFont)nagFont=(async()=>{try{const f=new FontFace('NagnuOS','url(fonts/OpenSans500-he.woff)',{weight:'500'});await f.load();document.fonts.add(f);measCF=null}catch(e){}})();return nagFont}
 function measC(){if(measCF)return measCF;const c=document.createElement('canvas').getContext('2d');c.font='500 100px NagnuOS,Arial,"Liberation Sans",sans-serif';const m={};measCF=s=>m[s]!=null?m[s]:(m[s]=c.measureText(s).width/100);return measCF}
+// ניקוי אחרי חישוב המיקומים: מקף ריווח (— / –) בתוך מילה ורווחים כפולים – באתרים הם רק מפנים מקום לאקורדים.
+// האקורדים נשארים על אותה אות; אקורד שישב על תו שנמחק עובר לאות שאחריו.
+function tidy(o){const a=chars(o.t),L=a.length,del=new Array(L).fill(false),isL=ch=>ch&&ch!==' '&&ch!=='—'&&ch!=='–';
+  for(let i=0;i<L;i++){if((a[i]==='—'||a[i]==='–')&&isL(a[i-1])&&isL(a[i+1]))del[i]=true;else if(a[i]===' '&&a[i-1]===' ')del[i]=true}
+  if(!del.some(Boolean))return o;
+  const shift=[];let n=0;for(let i=0;i<=L;i++){shift.push(i-n);if(i<L&&del[i])n++}
+  const c={};Object.keys(o.c).forEach(k=>{const i=Math.min(+k,L),nk=shift[i];c[nk]=c[nk]?c[nk]+' '+o.c[k]:o.c[k]});
+  return{t:a.filter((_,i)=>!del[i]).join(''),c}}
 function parseChordText(txt,site){
   const raw=txt.replace(/\r/g,'').replace(/\u00a0/g,' ').replace(/\t/g,'    ').split('\n').map(l=>l.replace(/[\u200e\u200f\u202a-\u202e]/g,'').replace(/\s+$/,''));
   let cp;const meta=L=>{const m=L.match(/(?:capo|קאפו)\s*:?\s*(\d{1,2})/i);if(m&&+m[1]>0&&+m[1]<=12)cp=+m[1];return /^\s*(?:capo|קאפו|key|tuning|סולם|כיוון|tempo|bpm)\b|\]\(https?:/i.test(L)};
@@ -1643,10 +1651,10 @@ function parseChordText(txt,site){
     const lb=label(L);if(lb!=null){pend=lb;blank=false;continue}
     if(isChordLine(L)){let j=i+1;
       if(j<raw.length&&raw[j].trim()&&!isChordLine(raw[j])&&label(raw[j])==null&&!meta(raw[j])){
-        head();out.push(map(L,raw[j]));any=true;i=j;continue}
+        head();out.push(tidy(map(L,raw[j])));any=true;i=j;continue}
       const x=L.trim().split(/\s+/).filter(k=>CHRE.test(k));
       blank=false;out.push({t:'',c:{},ty:'c',x,lab:pend||''});pend=null;blank=false;any=true;continue}
-    head();out.push({t:L.trim(),c:{}});any=true}
+    head();out.push(tidy({t:L.trim(),c:{}}));any=true}
   if(pend!=null)out.push({t:'',c:{},ty:'c',x:[],lab:pend});
   return{lines:out,cp,dir:detect(out.map(l=>l.t).join(''))}
 }
