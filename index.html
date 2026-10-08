@@ -1583,7 +1583,7 @@ const CHRE=/^[A-G][#b]?(?:maj|min|m|M|dim|aug|sus|add|°|ø|\+|-)?\d*(?:(?:maj|s
 const CHFILL=/^(?:\||\|\||x\d+|\(x\d+\)|-+|\.+|%|\/)$/i;
 const LABRE=/^(?:פתיחה|בית|פזמון(?: חוזר)?|גשר|מעבר|סיום|סולו|קודה|אינטרו|intro|verse|chorus|pre-?chorus|bridge|outro|solo|interlude|instrumental|refrain|hook|coda|ending|break)(?:\s*\d+)?\s*:?$/i;
 function isChordLine(L){const tk=L.trim().split(/\s+/).filter(Boolean);return tk.length>0&&tk.some(x=>CHRE.test(x))&&tk.every(x=>CHRE.test(x)||CHFILL.test(x))}
-function parseChordText(txt){
+function parseChordText(txt,site){
   const raw=txt.replace(/\r/g,'').replace(/\u00a0/g,' ').replace(/\t/g,'    ').split('\n').map(l=>l.replace(/[\u200e\u200f\u202a-\u202e]/g,'').replace(/\s+$/,''));
   let cp;const meta=L=>{const m=L.match(/(?:capo|קאפו)\s*:?\s*(\d{1,2})/i);if(m&&+m[1]>0&&+m[1]<=12)cp=+m[1];return /^\s*(?:capo|קאפו|key|tuning|סולם|כיוון|tempo|bpm)\b|\]\(https?:/i.test(L)};
   const label=L=>{const x=L.trim();let m=x.match(/^\[([^\]]{1,30})\]$/);if(m)return m[1].trim();if(LABRE.test(x))return x.replace(/:$/,'').trim();
@@ -1593,7 +1593,7 @@ function parseChordText(txt){
   if(tl.length>=6&&tl.filter(l=>l.trim().length<=3).length/tl.length>0.3)return{err:'frag'};
   // עברית: אתרים עם גופן משתנה (כמו נגנו) – שורת האקורדים ארוכה מהמילים ומיושרת לימין; אתרים עם גופן קבוע (כמו Ultimate Guitar) – מיושרת לשמאל
   const rts=[];for(let i=0;i+1<raw.length;i++){const a=raw[i],b2=raw[i+1];if(isChordLine(a)&&b2.trim()&&!isChordLine(b2)&&detect(b2)==='rtl'){const m=a.match(/^.*\S/);rts.push(m[0].length/Math.max(1,chars(b2.trim()).length))}}
-  const prop=rts.length>0&&rts.reduce((x,y)=>x+y,0)/rts.length>1.12;
+  const prop=site==='nagnu'?true:site==='ug'?false:rts.length>0&&rts.reduce((x,y)=>x+y,0)/rts.length>1.12;
   const out=[];let pend=null,blank=false,any=false;
   const head=()=>{const last=out[out.length-1];if(pend!=null)out.push({t:'',c:{},ty:'c',x:[],lab:pend});else if(blank&&any&&last&&last.ty!=='c')out.push({t:'',c:{},ty:'c',x:[],lab:''});pend=null;blank=false};
   const map=(cl,ly)=>{const lead=ly.length-ly.replace(/^\s+/,'').length,t=ly.trim(),len=chars(t).length,ps=[];
@@ -1632,6 +1632,9 @@ function pasteSong(fid){
   d.append(el('h3','','הדבק שיר עם אקורדים'));
   const ti=el('input','f');ti.placeholder='שם השיר';ti.maxLength=80;ti.setAttribute('aria-label','שם השיר');
   const ar=el('input','f');ar.placeholder='אמן';ar.maxLength=80;ar.setAttribute('aria-label','אמן');
+  const st=el('select','f');st.setAttribute('aria-label','מאיזה אתר הועתק השיר');
+  [['','מאיזה אתר הועתק השיר?'],['nagnu','נגנו'],['negina','נגינה'],['ug','Ultimate Guitar'],['cifra','Cifra Club'],['auto','אחר (זיהוי אוטומטי)']].forEach(([k,x],i)=>{const o=el('option','',x);o.value=k;if(!i){o.disabled=true;o.selected=true}st.append(o)});
+  st.onchange=()=>{st.classList.remove('bad');er.hidden=true};
   const ta=el('textarea','f');ta.rows=10;ta.dir='auto';ta.placeholder='הדבק כאן את השיר, עם שורות האקורדים מעל המילים';ta.setAttribute('aria-label','השיר עם האקורדים');
   const er=el('p','perr');er.hidden=true;
   [ti,ar,ta].forEach(x=>x.oninput=()=>{if(x.value.trim())x.classList.remove('bad');er.hidden=true});
@@ -1639,8 +1642,9 @@ function pasteSong(fid){
   const kd=e=>{if(e.key==='Escape'){e.preventDefault();done()}};
   const go=()=>{const miss=[ti,ar].filter(x=>!x.value.trim());miss.forEach(x=>x.classList.add('bad'));
     if(miss.length){er.textContent='צריך למלא שם שיר ואמן';er.hidden=false;miss[0].focus();return}
+    if(!st.value){st.classList.add('bad');er.textContent='צריך לבחור מאיזה אתר הועתק השיר';er.hidden=false;st.focus();return}
     if(!ta.value.trim()){ta.classList.add('bad');er.textContent='צריך להדביק את השיר';er.hidden=false;ta.focus();return}
-    const r=parseChordText(ta.value);
+    const r=parseChordText(ta.value,st.value);
     if(r.err==='frag'){er.textContent='הטקסט מהאתר הזה מגיע מפורק ולא ניתן לייבא אותו. נסה להעתיק את השיר מאתר אחר.';er.hidden=false;return}
     if(!r.lines.some(l=>l.ty!=='c'||l.x.length)){er.textContent='לא מצאתי בטקסט מילים או אקורדים.';er.hidden=false;return}
     done();
@@ -1648,7 +1652,7 @@ function pasteSong(fid){
     v='ed';tab='c';pk=null;render();edSnap='imported';
     toast('השיר יובא. בדוק את מיקום האקורדים ושמור',3500)};
   const b=el('div','dlgb');b.append(btn('ייבא',go,'b pr'),btn('ביטול',done,'b'));
-  d.append(ti,ar,ta,er,b);w.append(d);w.onclick=e=>{if(e.target===w)done()};document.body.append(w);
+  d.append(ti,ar,st,ta,er,b);w.append(d);w.onclick=e=>{if(e.target===w)done()};document.body.append(w);
   document.addEventListener('keydown',kd,true);dlgClose=()=>done();setTimeout(()=>ti.focus(),30);
 }
 
