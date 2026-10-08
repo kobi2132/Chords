@@ -1,9 +1,9 @@
 // אקורדי – שומר את קבצי האפליקציה בטלפון כדי שתעבוד גם בלי אינטרנט.
 // VER – מספר הגרסה שמוצג (Akordi 0.N). V – קוד לפי תוכן הקבצים. שניהם מתעדכנים אוטומטית בכל עדכון (git pre-commit), וכך הטלפון יודע שיש גרסה חדשה.
-const VER='0.73';
-const V='229cf079ce';
+const VER='0.74b1';
+const V='2e6020d5ec';
 const C='akordi-'+VER+'_'+V;
-const ASSETS=['./','index.html','icon.svg','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png','fonts/Alef-Regular.ttf','fonts/Alef-Bold.ttf','fonts/OpenSans500-he.woff','vendor/jspdf.umd.min.js','privacy.html','terms.html','legal.css'];
+const ASSETS=['./','index.html','icon.svg','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png','manifest-beta.webmanifest','icon-beta.svg','icons/icon-beta-192.png','icons/icon-beta-512.png','icons/icon-beta-maskable-512.png','icons/apple-touch-icon-beta.png','fonts/Alef-Regular.ttf','fonts/Alef-Bold.ttf','fonts/OpenSans500-he.woff','vendor/jspdf.umd.min.js','privacy.html','terms.html','legal.css'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(C).then(c=>c.addAll(ASSETS.map(u=>new Request(u,{cache:'reload'})))));
 });

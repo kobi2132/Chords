@@ -5,8 +5,9 @@
 //   TG_TOKEN    – סוד (Secret, לא חובה): מפתח של בוט טלגרם, להתראה על פנייה חדשה. ההתראה כוללת רק את סוג הפנייה.
 // לא נשמרים: מייל (חוץ ממשוב שהמשתמש בחר לצרף אליו מייל), שם, כתובת IP או תוכן שירים.
 
-const ORIGINS = ['https://kobi2132.github.io', 'http://localhost:8765'];
+const ORIGINS = ['https://kobi2132.github.io', 'https://akordi-dev.pages.dev', 'http://localhost:8765', 'http://localhost:8766'];
 const DAY_MS = 864e5;
+let BETA_SRV = false; // נקבע לפי כתובת השרת – אותו קוד משמש את השרת האמיתי ואת שרת הבדיקות
 // כל התאריכים לפי שעון ישראל
 const IL = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem', year: 'numeric', month: '2-digit', day: '2-digit' });
 const ilDay = ms => IL.format(new Date(ms));
@@ -74,12 +75,18 @@ async function ping(req, env, b) {
     env.DB.prepare('DELETE FROM daily WHERE day < ?1').bind(dayAgo(400)),
     env.DB.prepare('DELETE FROM errs WHERE day < ?1').bind(dayAgo(400)),
   ]);
-  const m = await env.DB.prepare('SELECT mid, text, until FROM msg WHERE k=1').first();
-  return json(req, { ok: true, msg: m && (!m.until || m.until > Date.now()) ? m : null });
+  return json(req, { ok: true, msg: await activeMsg(env) });
 }
 
+// הודעה לכל המשתמשים: מוצגת רק בין זמן ההתחלה (since) לזמן הסיום (until)
+async function activeMsg(env) {
+  const m = await env.DB.prepare('SELECT mid, text, since, until FROM msg WHERE k=1').first();
+  const t = Date.now();
+  return m && (!m.since || m.since <= t) && (!m.until || m.until > t) ? { mid: m.mid, text: m.text, until: m.until } : null;
+}
 async function kvGet(env, k) { const r = await env.DB.prepare('SELECT v FROM kv WHERE k=?1').bind(k).first(); return r ? r.v : null; }
 async function tgSend(env, chat, text) {
+  if (BETA_SRV) text = '🧪 [בדיקה] ' + text;
   const r = await fetch(`https://api.telegram.org/bot${env.TG_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chat, text }) });
   return r.ok;
 }
@@ -157,12 +164,13 @@ export default {
   async fetch(req, env, ctx) {
     if (req.method === 'OPTIONS') return new Response(null, { headers: cors(req) });
     const url = new URL(req.url), p = url.pathname.replace(/\/+$/, '') || '/';
+    // שרת הבדיקות (akordi-dev) – כל התראה בטלגרם מסומנת "בדיקה"
+    BETA_SRV = url.hostname.startsWith('akordi-dev');
     try {
       if (p === '/') return json(req, { ok: true, app: 'akordi' });
       // הודעה לכל המשתמשים – גם למי שכיבה את שליחת נתוני השימוש
       if (p === '/msg' && req.method === 'GET') {
-        const m = await env.DB.prepare('SELECT mid, text, until FROM msg WHERE k=1').first();
-        return json(req, { msg: m && (!m.until || m.until > Date.now()) ? m : null });
+        return json(req, { msg: await activeMsg(env) });
       }
       if (req.method === 'POST' && (p === '/ping' || p === '/feedback')) {
         const len = +(req.headers.get('Content-Length') || 0);
@@ -202,12 +210,15 @@ export default {
           }
           if (p === '/admin/msg') {
             if (!b.text) await env.DB.prepare('DELETE FROM msg').run();
-            else await env.DB.prepare('INSERT INTO msg (k,mid,text,until) VALUES (1,?1,?2,?3) ON CONFLICT(k) DO UPDATE SET mid=?1,text=?2,until=?3')
-              .bind(Date.now(), str(b.text, 500), Number.isFinite(+b.until) && +b.until > Date.now() ? Math.round(+b.until) : null).run();
+            else {
+              const ts = x => (Number.isFinite(+x) && +x > 0 ? Math.round(+x) : null);
+              await env.DB.prepare('INSERT INTO msg (k,mid,text,since,until) VALUES (1,?1,?2,?3,?4) ON CONFLICT(k) DO UPDATE SET mid=?1,text=?2,since=?3,until=?4')
+                .bind(Date.now(), str(b.text, 500), ts(b.since), ts(b.until)).run();
+            }
             return json(req, { ok: true });
           }
         }
-        if (p === '/admin/msg') return json(req, await env.DB.prepare('SELECT mid, text, until FROM msg WHERE k=1').first());
+        if (p === '/admin/msg') return json(req, await env.DB.prepare('SELECT mid, text, since, until FROM msg WHERE k=1').first());
       }
       return json(req, { ok: false }, 404);
     } catch (e) {
