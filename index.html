@@ -1605,8 +1605,18 @@ function parseChordText(txt,site){
     if(detect(t)==='rtl'){
       // עברית: שורת האקורדים (טקסט לועזי) נספרת משמאל, כלומר הפוך לכיוון המילים
       const ps2=[];const re2=/\S+/g;let m2;while((m2=re2.exec(cl)))if(CHRE.test(m2[0]))ps2.push([m2.index,m2[0]]);
-      const Lc=Math.max(...ps2.map(([i,x])=>i+x.length)),sc=prop;
-      const tc=chars(t);ps2.forEach(([i,x])=>{let k=sc?Math.round((Lc-i-x.length)*len/Lc):len-i-x.length;if(sc)k=snap(k,3);else if(tc[k]===' ')k++;put(k,x)});
+      const Lc=Math.max(...ps2.map(([i,x])=>i+x.length)),tc=chars(t);
+      if(prop){
+        // גופן משתנה (נגנו): השורה מוצגת מימין לשמאל – רווחים מובילים מימין, והאקורדים עצמם משמאל לימין.
+        // מרחק כל אקורד מהקצה הימני (ברווחים) מומר לרוחב אותיות: רווח-אקורד ≈ 0.62 אות, רווח בין מילים ≈ 0.33 אות.
+        const Ls=cl.length-cl.replace(/^ +/,'').length,pos=[];let X=0;
+        tc.forEach(ch=>{pos.push(X);X+=ch===' '?0.33:/[.,;:!?'"\-–()]/.test(ch)?0.4:1});
+        const wd=[];let m3;const re3=/\S+/g;const tj=tc.join('');while((m3=re3.exec(tj))){const a=chars(tj.slice(0,m3.index)).length,b=a+chars(m3[0]).length;wd.push([a,b])}
+        const tot=X;ps2.forEach(([i,x])=>{const d=(Ls+Lc-i-x.length)*0.62;let k=d<tot+1.5&&wd.length?wd[wd.length-1][0]:len;
+          for(let w=0;w<wd.length;w++){const a0=pos[wd[w][0]],a1=pos[wd[w][1]-1]+1;
+            if(d<a1){k=d<a0||(d-a0)/(a1-a0)<=0.75?wd[w][0]:(w+1<wd.length?wd[w+1][0]:wd[w][0]);break}}
+          put(k,x)});
+      }else ps2.forEach(([i,x])=>{let k=len-i-x.length;if(tc[k]===' ')k++;put(k,x)});
       return{t,c}}
     const clen=Math.max(...ps.map(([i,x])=>i+x.length)),sc=ps[ps.length-1][0]>len-1+3;
     ps.forEach(([i,x])=>{let k=Math.max(0,i);
@@ -1621,7 +1631,7 @@ function parseChordText(txt,site){
       if(j<raw.length&&raw[j].trim()&&!isChordLine(raw[j])&&label(raw[j])==null&&!meta(raw[j])){
         head();out.push(map(L,raw[j]));any=true;i=j;continue}
       const x=L.trim().split(/\s+/).filter(k=>CHRE.test(k));
-      if(pend==null)head();out.push({t:'',c:{},ty:'c',x,lab:pend||''});pend=null;blank=false;any=true;continue}
+      blank=false;out.push({t:'',c:{},ty:'c',x,lab:pend||''});pend=null;blank=false;any=true;continue}
     head();out.push({t:L.trim(),c:{}});any=true}
   if(pend!=null)out.push({t:'',c:{},ty:'c',x:[],lab:pend});
   return{lines:out,cp,dir:detect(out.map(l=>l.t).join(''))}
