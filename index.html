@@ -1617,11 +1617,14 @@ function parseChordText(txt,site){
       if(prop){
         // נגנו: השורה מוצגת מימין לשמאל (רווחים מובילים מימין). כל אקורד מוצג בתיבה (רוחב הטקסט + 0.0626em), ולכן המרחק מהקצה הימני
         // = רווחים × רוחב רווח + סכום רוחבי התיבות מימין (בגופן האתר, Open Sans 500). כויל מול צילום של האתר: סטייה מרבית ~0.06em.
+        // האקורד משויך לאות שמתחת למרכז שלו – כמו שהעין קוראת אותו באתר (ובאקורדי האקורד ממורכז מעל האות).
         const Ls=cl.length-cl.replace(/^ +/,'').length,mc=measC(),cw=tc.map(ch=>mc(ch)),pos=[];let X=0;cw.forEach(w=>{pos.push(X);X+=w});
         const tk=ps2.slice().sort((a,b)=>b[0]-a[0]),sw=mc(' ');let cc=0,acc=0;
-        tk.forEach(([i,x])=>{const d=Ls+Lc-i-x.length,off=(d-cc)*sw+acc+0.02;cc+=x.length;acc+=mc(x)+0.0626;
+        tk.forEach(([i,x])=>{const d=Ls+Lc-i-x.length,off=(d-cc)*sw+acc+mc(x)/2;cc+=x.length;acc+=mc(x)+0.0626;
           let k=len;for(let q=0;q<len;q++)if(off<pos[q]+cw[q]){k=q;break}
-          while(k<len&&tc[k]===' ')k++;put(k,x)});
+          if(k<len&&tc[k]===' '){let a=k,b=k;while(a>=0&&tc[a]===' ')a--;while(b<len&&tc[b]===' ')b++;
+            const da=a>=0?off-(pos[a]+cw[a]):1e9,db=b<len?pos[b]-off:1e9;k=da<db?a:b}
+          put(k,x)});
       }else ps2.forEach(([i,x])=>{let k=len-i-x.length;if(tc[k]===' ')k++;put(k,x)});
       return{t,c}}
     const clen=Math.max(...ps.map(([i,x])=>i+x.length)),sc=ps[ps.length-1][0]>len-1+3;
