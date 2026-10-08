@@ -197,7 +197,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 .pdfbox .toc{display:flex;justify-content:space-between;gap:12px;font-size:12px;padding:6px 0;border-bottom:1px solid #ddd}.pdfbox .tn{direction:ltr;color:#555}
 .pdfbox .pfoot{font-size:8px;color:#888}
 .hello{color:var(--mut);margin:2px 0 12px;font-size:.95rem}.brand{display:flex;align-items:center;gap:12px;margin:12px 0}.blogo{width:52px;height:52px;flex:none;border-radius:12px}.btx{min-width:0}.brand .sti{margin:0}.brand .hello{margin:2px 0 0}.mlogo{width:22px;height:22px;vertical-align:middle;margin-inline-end:6px;border-radius:5px}
-.legal{font-size:.8rem;color:var(--mut);margin:10px 0 26px}.legal a{color:var(--ch)}
+.legal{font-size:.8rem;color:var(--mut);margin:10px 0 26px}.sec .legal{text-align:center}.cts .f{display:block;width:100%;margin:0 0 8px}.ctok{color:var(--gfg);margin:0 0 8px;font-size:.92rem}.legal a{color:var(--ch)}
 .skip{background:none;border:0;color:var(--fg);text-decoration:underline;cursor:pointer;font-size:.95rem;padding:8px}
 .lim{text-align:start;font-size:.82rem;color:var(--mut);margin:10px auto 0;padding-inline-start:1.2em;max-width:340px}.lim li{margin:3px 0}
 .chk{display:flex;gap:8px;align-items:flex-start;text-align:start;font-size:.9rem;margin:12px 0}.chk input{margin-top:3px}
@@ -267,7 +267,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 <div id="app"></div>
 <script>
 // מספר הגרסה מתעדכן אוטומטית בכל עדכון (git pre-commit)
-const APPV='0.69';
+const APPV='0.70';
 const verName=x=>/^\d+\.\d+$/.test(x||'')?'Akordi '+x:x?'beta':'–';
 let favOnly=false,galSong=null,incoming=null,S=[],v='list',cur=null,tab='l',pk=null,t=0,fs=18,sp=3,timer=null,tbc=false,pv='',ins='g',onChord=null,closeP=null;
 try{S=JSON.parse(localStorage.getItem('chords_songs')||'[]')}catch(e){}
@@ -1246,12 +1246,12 @@ function accountSection(){
   const s=el('div','sec');s.append(el('h2','sh','חשבון'));
   if(!acct){
     s.append(el('div','hint','התחבר כדי לגבות את השירים ב-Google Drive שלך ולסנכרן בין מכשירים.'));
-    const g=btn('',()=>signIn(true),'gbtn');g.innerHTML=IB.cloud;g.append('התחבר עם Google');s.append(g,legal());return s}
+    const g=btn('',()=>signIn(true),'gbtn');g.innerHTML=IB.cloud;g.append('התחבר עם Google');s.append(g,privCheck(),legal());return s}
   const box=el('div','acc');box.append(el('div','','מחובר כ-'+acct.email),el('small','',''));
   const st=el('div','hint',{ok:'מסונכרן עם Google Drive.',busy:'מסנכרן...',need:'כדי לסנכרן, לחץ "סנכרן עכשיו".',err:'הסנכרון האחרון נכשל.'}[cloudSt]||'');
   const ck=el('label','chk'),cb=el('input');cb.type='checkbox';cb.checked=!!acct.news;cb.onchange=()=>{acct.news=cb.checked;acct.upd=Date.now();saveAcct();markDirty()};ck.append(cb,el('span','','קבלת עדכונים במייל'));
   const r=el('div','row');r.append(btn('סנכרן עכשיו',()=>{if(tokOk())syncNow().then(()=>render());else signIn(false)},'b pr'),btn('התנתק',signOut,'b'));
-  box.append(st,ck,r);s.append(box);
+  box.append(st,ck,privCheck(),r);s.append(box);
   const pl=el('p','legal');const a1=el('a','','תנאי השימוש');a1.href='terms.html';a1.target='_blank';const a2=el('a','','מדיניות הפרטיות');a2.href='privacy.html';a2.target='_blank';pl.append(a1,' · ',a2);s.append(pl);
   return s;
 }
@@ -1262,7 +1262,9 @@ const DEVH='c5dc86eb30a74fd8597e15c6e48d02d88052cd44f0ce9e5e4467e7a37354dd0a';
 let devOk=false,devTab='info',devForce=null;
 async function chkDev(){let ok=false;
   try{if(acct&&acct.email&&window.crypto&&crypto.subtle){const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(acct.email.trim().toLowerCase()));ok=[...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')===DEVH}}catch(e){}
-  if(ok!==devOk){devOk=ok;if(v==='set'||v==='dev')render()}}
+  if(ok!==devOk){devOk=ok;if(v==='set'||v==='dev')render()}
+  // מכשיר שזוהה כשלך ועוד לא דווח לשרת – שולח מיד, כדי שלא ייספר בסטטיסטיקה
+  if(ok&&!lsG('chords_mesent',false)&&!noPing())setTimeout(()=>dailyPing(true),1500)}
 const ltrI=x=>'\u2066'+x+'\u2069',fmtB=n=>n==null?'–':ltrI(n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(1)+' MB');
 // כל התאריכים בעמוד המפתח ובסטטיסטיקה – לפי שעון ישראל
 const ilParts=t=>{const o={};try{new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jerusalem',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(+t)).forEach(x=>o[x.type]=x.value)}catch(e){const d=new Date(+t),p2=x=>String(x).padStart(2,'0');Object.assign(o,{year:d.getFullYear(),month:p2(d.getMonth()+1),day:p2(d.getDate()),hour:p2(d.getHours()),minute:p2(d.getMinutes())})}return o};
@@ -1389,7 +1391,7 @@ async function dailyPing(force){
       // מונים שנוספו בזמן השליחה נשמרים לפעם הבאה
       const sub=(a,b)=>{Object.keys(b).forEach(k=>{if(typeof b[k]==='number'){a[k]=(a[k]||0)-b[k];if(a[k]<=0)delete a[k]}else if(a[k]){sub(a[k],b[k]);if(!Object.keys(a[k]).length)delete a[k]}});return a};
       lsS('chords_ev',sub(lsG('chords_ev',{}),ev));lsS('chords_bn',sub(lsG('chords_bn',{}),bn));lsS('chords_er',lsG('chords_er',[]).filter(x=>!er.includes(x)));
-      lsS('chords_plast',Date.now())}
+      lsS('chords_plast',Date.now());if(body.me)lsS('chords_mesent',true)}
     lsS('chords_pday',dayStr());
     if(msg&&msg.mid!==lsG('chords_msgseen',0)){lsS('chords_msgpend',msg);showMsg()}
     return true
@@ -1402,39 +1404,31 @@ setTimeout(()=>dailyPing(),2500);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')dailyPing()});
 window.addEventListener('online',()=>dailyPing());
 
-function privSection(){
-  const s=el('div','sec');s.append(el('h2','sh','פרטיות'));
+// סימון "שליחת נתוני שימוש" – מופיע בתוך אזור החשבון (גם למחוברים וגם למי שלא מחובר)
+function privCheck(){
   const ck=el('label','chk'),cb=el('input');cb.type='checkbox';cb.checked=!noPing();
   cb.onchange=()=>{if(cb.checked)try{localStorage.removeItem('chords_noping')}catch(e){}else{lsS('chords_noping',true);['chords_ev','chords_bn','chords_er'].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}})}};
-  ck.append(cb,el('span','','שליחת נתוני שימוש אנונימיים. עוזר לשפר את אקורדי. לא נשלחים שירים, שם או מייל.'));
-  s.append(ck);return s}
+  ck.append(cb,el('span','','שליחת נתוני שימוש אנונימיים. עוזר לשפר את אקורדי. לא נשלחים שירים, שם או מייל.'));return ck}
 function contactSection(){
-  const s=el('div','sec');s.append(el('h2','sh','צור קשר'),el('div','hint','יש לך רעיון, מצאת משהו שלא עובד, או סתם בא לך לספר איך אקורדי משרתת אותך? נשמח לשמוע. כל הודעה נקראת.'),btn('צור קשר',feedbackDlg,'b'));return s}
-const FBK=[['idea','רעיון לשיפור'],['bug','משהו לא עובד'],['fb','מחשבות ופידבק'],['other','אחר']];
-function feedbackDlg(){
-  if(dlgClose)dlgClose(null);
-  const w=el('div','dlgw'),d=el('div','dlg fbd');d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
+  const s=el('div','sec cts');s.append(el('h2','sh','צור קשר'),el('div','hint','יש לך רעיון, מצאת משהו שלא עובד, או סתם בא לך לספר איך אקורדי משרתת אותך? נשמח לשמוע. כל הודעה נקראת.'));
   const kd0=el('select','f');kd0.setAttribute('aria-label','סוג הפנייה');
   [['','על מה תרצה לכתוב?'],...FBK].forEach(([k,x],i)=>{const o=el('option','',x);o.value=k;if(!i){o.disabled=true;o.selected=true}kd0.append(o)});
-  const ta=el('textarea','f nta');ta.maxLength=2000;ta.rows=5;ta.placeholder='כתוב כאן…';ta.setAttribute('aria-label','ההודעה שלך');
+  const ta=el('textarea','f nta');ta.maxLength=2000;ta.rows=4;ta.placeholder='כתוב כאן…';ta.setAttribute('aria-label','ההודעה שלך');
   const em=el('input','f');em.type='email';em.maxLength=120;em.placeholder='מייל לתשובה (לא חובה)';em.setAttribute('aria-label','מייל לתשובה');em.dir='ltr';
-  const er=el('p','perr');er.hidden=true;
-  const done=()=>{w.remove();document.removeEventListener('keydown',kd,true);dlgClose=null};
-  const kd=e=>{if(e.key==='Escape'){e.preventDefault();done()}};
-  const sb=btn('שלח',async()=>{
+  const er=el('p','perr');er.hidden=true;const okm=el('p','ctok');okm.hidden=true;
+  const sb=btn('שלח',async()=>{okm.hidden=true;
     if(!kd0.value){kd0.classList.add('bad');er.textContent='בחר על מה תרצה לכתוב';er.hidden=false;kd0.focus();return}
     const tx=ta.value.trim();if(!tx){ta.classList.add('bad');er.textContent='כתוב כמה מילים';er.hidden=false;ta.focus();return}
     const e2=em.value.trim();if(e2&&!/\S+@\S+\.\S+/.test(e2)){er.textContent='כתובת המייל לא נראית תקינה';er.hidden=false;em.focus();return}
     sb.disabled=true;er.hidden=true;
     try{const r=await fetch(API+'/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:noPing()?null:did(),v:await appVer(),kind:kd0.value,text:tx,email:e2||null})});
       if(r.status===429){er.textContent='שלחת הרבה הודעות היום. אפשר לשלוח שוב מחר.';er.hidden=false;sb.disabled=false;return}
-      if(!r.ok)throw new Error();done();toast('תודה! ההודעה נשלחה')}
+      if(!r.ok)throw new Error();
+      kd0.value='';ta.value='';em.value='';okm.textContent='תודה! ההודעה נשלחה.';okm.hidden=false;sb.disabled=false}
     catch(e){er.textContent='לא הצלחתי לשלוח. בדוק את החיבור לאינטרנט ונסה שוב.';er.hidden=false;sb.disabled=false}},'b pr');
-  kd0.onchange=()=>{kd0.classList.remove('bad');er.hidden=true};ta.oninput=()=>{ta.classList.remove('bad');er.hidden=true};
-  const b=el('div','dlgb');b.append(sb,btn('ביטול',done,'b'));
-  d.append(el('h3','','צור קשר'),el('p','','נשמח לשמוע. אם תשאיר מייל, הוא ישמש רק כדי לענות לך.'),kd0,ta,em,er,b);
-  w.append(d);w.onclick=e=>{if(e.target===w)done()};document.body.append(w);document.addEventListener('keydown',kd,true);dlgClose=()=>done();setTimeout(()=>kd0.focus(),30)}
-
+  kd0.onchange=()=>{kd0.classList.remove('bad');er.hidden=true;okm.hidden=true};ta.oninput=()=>{ta.classList.remove('bad');er.hidden=true;okm.hidden=true};
+  s.append(kd0,ta,em,er,okm,sb);return s}
+const FBK=[['idea','רעיון לשיפור'],['bug','משהו לא עובד'],['fb','מחשבות ופידבק'],['other','אחר']];
 // ----- עמוד מפתח: קריאות לשרת עם ההתחברות של גוגל -----
 async function adm(path,body){if(!tokOk())throw new Error('auth');
   const r=await fetch(API+path,body?{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+tok},body:JSON.stringify(body)}:{headers:{Authorization:'Bearer '+tok}});
@@ -1472,11 +1466,11 @@ let devDays=30,devMe=false;
 function devStats(){
   if(!tokOk()){devNeedTok();return}
   const ctl=el('div','dvr');const rg=el('div','seg');
-  [[7,'7 ימים'],[30,'30 יום'],[90,'90 יום'],[0,'הכל']].forEach(([k,x])=>rg.append(btn(x,()=>{if(devDays!==k){devDays=k;devSt=null;render()}},'b'+(devDays===k?' on':''))));
+  [[1,'היום'],[7,'7 ימים'],[30,'30 יום'],[90,'90 יום'],[0,'הכל']].forEach(([k,x])=>rg.append(btn(x,()=>{if(devDays!==k){devDays=k;devSt=null;render()}},'b'+(devDays===k?' on':''))));
   const mel=el('label','chk'),mc=el('input');mc.type='checkbox';mc.checked=devMe;mc.onchange=()=>{devMe=mc.checked;devSt=null;render()};mel.append(mc,el('span','','כולל אותי'));
   ctl.append(rg,mel);A.append(ctl);
   if(!devSt){A.append(el('div','dvc dve','טוען נתונים…'));adm('/admin/stats?days='+devDays+(devMe?'&me=1':'')).then(d=>{devSt=d;if(v==='dev'&&devTab==='stats')render()}).catch(e=>{if(v==='dev'&&devTab==='stats'){A.lastChild.remove();devErr(e,()=>{devSt=null;render()})}});return}
-  const d=devSt,RL=d.days?d.days+' ימים':'מההתחלה',hd=el('div','dvh');hd.append(el('span','','עודכן '+fmtDT(d.at)),btn('רענן',()=>{devSt=null;render()},'b'));A.append(hd);
+  const d=devSt,RL=d.days===1?'היום':d.days?d.days+' ימים':'מההתחלה',hd=el('div','dvh');hd.append(el('span','','עודכן '+fmtDT(d.at)),btn('רענן',()=>{devSt=null;render()},'b'));A.append(hd);
   const tt=d.total||{};
   if(!tt.n){A.append(el('div','dvc dve','עוד אין נתונים'+(d.me?'':' (בלי המכשירים שלך)')+'. הנתונים מגיעים פעם ביום מכל מכשיר שפותח את אקורדי.'));return}
   const ac=d.active||{},sp=(n,r)=>'רשומים '+(r||0)+'\nלא רשומים '+((n||0)-(r||0));
@@ -1484,11 +1478,11 @@ function devStats(){
   const sm=el('div','dvsum');sm.append(el('span','','השבוע: '+(ac.wau||0)+' משתמשים פעילים · '+(d.new7||0)+' חדשים'));
   if(d.fbOpen){sm.append(' · ');const a=el('a','',d.fbOpen+(d.fbOpen>1?' פניות פתוחות':' פנייה פתוחה'));a.href='#';a.onclick=e=>{e.preventDefault();devTab='fb';render()};sm.append(a)}
   A.append(sm);
-  A.append(el('h2','sh','משתמשים'),dvTiles([[ac.dau||0,'היום',sp(ac.dau,ac.dauR)],[ac.wau||0,'7 ימים',sp(ac.wau,ac.wauR)],[ac.mau||0,'30 יום',sp(ac.mau,ac.mauR)]],'k3'),
-    dvTiles([[tt.n||0,'כל המשתמשים','רשומים '+nP(tt.r||0,tt.n)+'\nלא רשומים '+((tt.n||0)-(tt.r||0))],
-      [tt.r?(+(tt.devR/tt.r).toFixed(1)):'–','מכשירים למשתמש רשום',tt.r?(tt.devR||0)+' מכשירים של '+tt.r+' משתמשים':'עוד אין משתמשים רשומים']],'k2'),
+  const rg2=d.range||{};
+  A.append(el('h2','sh','משתמשים ('+RL+')'),dvTiles([[rg2.n||0,'פעילים',sp(rg2.n,rg2.r)],[tt.n||0,'כל המשתמשים','רשומים '+nP(tt.r||0,tt.n)+'\nלא רשומים '+((tt.n||0)-(tt.r||0))],
+      [tt.r?(+(tt.devR/tt.r).toFixed(1)):'–','מכשירים למשתמש רשום',tt.r?(tt.devR||0)+' מכשירים של '+tt.r+' משתמשים':'עוד אין משתמשים רשומים']],'k3'),
     el('p','hint','משתמש רשום נספר פעם אחת בכל המכשירים שלו. משתמש לא רשום נספר לפי מכשיר.'+(d.me?'':' המכשירים שלך לא נכללים.')));
-  A.append(el('h2','sh','משתמשים פעילים בכל יום'),dvBars(d.series,d),el('h2','sh','משתמשים חדשים בכל יום'),dvBars(d.newS,d));
+  if(d.days!==1)A.append(el('h2','sh','משתמשים פעילים בכל יום'),dvBars(d.series,d),el('h2','sh','משתמשים חדשים בכל יום'),dvBars(d.newS,d));
   const r7=d.ret.d7||{},r30=d.ret.d30||{},rt=(r,days)=>r.n?[pct(r.r||0,r.n),'חזרו אחרי '+days,(r.r||0)+' מתוך '+r.n]:['–','חזרו אחרי '+days,'יופיע '+(days==='שבוע'?'שבוע':'חודש')+' אחרי המשתמשים הראשונים'];
   A.append(el('h2','sh','שימור משתמשים'),el('p','hint','מבין מי שהצטרף לפני יותר משבוע (או חודש) – כמה חזרו לאקורדי אחרי שבוע (או חודש).'),dvTiles([rt(r7,'שבוע'),rt(r30,'חודש')],'k2'));
   const fl=d.flags||{};
@@ -1710,8 +1704,8 @@ function settings(){
   const r=el('div','row');r.append(bb,btn('ייבוא קובץ',()=>fi.click(),'b'));
   sec.append(el('h2','sh','גיבוי ושחזור'),el('div','hint','הגיבוי שומר את כל השירים בקובץ אחד. בייבוא קובץ (גיבוי, או תיקייה שמישהו שלח לך), שירים חדשים מתווספים, ושיר שקיים בשני המקומות נשמר בגרסה שנערכה אחרונה.'),r,msg,fi);
   if(devOk){const dr=el('div','sec dvbtn');dr.append(btn('עמוד מפתח',()=>{v='dev';render()},'b'));A.append(top,dr)}else A.append(top);
-  if(acct)A.append(prefsSection(),sec,contactSection(),privSection(),accountSection());
-  else A.append(accountSection(),prefsSection(),sec,contactSection(),privSection());
+  if(acct)A.append(prefsSection(),sec,contactSection(),accountSection());
+  else A.append(accountSection(),prefsSection(),sec,contactSection());
   const vf=el('p','vfoot',verName(APPV));vf.dir='ltr';
   A.append(vf);
 }

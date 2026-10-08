@@ -104,7 +104,7 @@ async function feedback(req, env, b, ctx) {
 
 // משתמש = משתמש רשום (לפי הקוד שלו, בכל המכשירים) או מכשיר של משתמש לא רשום
 const K = "COALESCE(v.u, 'd:' || v.id)";
-// days: טווח הזמן לגרפים ולפילוחים (7 / 30 / 90, או 0 = הכל). me: לכלול את המכשירים של בעל האפליקציה
+// days: טווח הזמן לגרפים ולפילוחים (1 = היום / 7 / 30 / 90, או 0 = הכל). me: לכלול את המכשירים של בעל האפליקציה
 async function stats(env, days, me) {
   const D = env.DB, t = today(), d7 = dayAgo(6), d30 = dayAgo(29), from = days ? dayAgo(days - 1) : '0000-00-00';
   const one = async (sql, ...a) => (await D.prepare(sql).bind(...a).first()) || {};
@@ -120,7 +120,8 @@ async function stats(env, days, me) {
   const ret = n => one(`WITH us AS (${US})
     SELECT COUNT(*) n, SUM(EXISTS(SELECT 1 FROM daily d JOIN devices v ON v.id = d.id WHERE ${K} = us.k AND d.day >= date(us.f, '+${n} day'))) r
     FROM us WHERE f BETWEEN ?1 AND ?2`, dayAgo(n === 7 ? 60 : 120), dayAgo(n + 1));
-  const [act, total, new7, first, series, newS, ret7, ret30, dv, os, br, cc, v, ins, dflags, uflags, content, evRows, bnRows, errs, fbOpen] = await Promise.all([
+  const [rng, act, total, new7, first, series, newS, ret7, ret30, dv, os, br, cc, v, ins, dflags, uflags, content, evRows, bnRows, errs, fbOpen] = await Promise.all([
+    one(`SELECT COUNT(DISTINCT ${K}) n, COUNT(DISTINCT v.u) r ${J} WHERE d.day>=?1`, from),
     one(`SELECT COUNT(DISTINCT CASE WHEN d.day=?1 THEN ${K} END) dau, COUNT(DISTINCT CASE WHEN d.day=?1 THEN v.u END) dauR,
       COUNT(DISTINCT CASE WHEN d.day>=?2 THEN ${K} END) wau, COUNT(DISTINCT CASE WHEN d.day>=?2 THEN v.u END) wauR,
       COUNT(DISTINCT ${K}) mau, COUNT(DISTINCT v.u) mauR ${J} WHERE d.day>=?3`, t, d7, d30),
@@ -144,7 +145,7 @@ async function stats(env, days, me) {
   for (const r of bnRows) (bn[r.k] = bn[r.k] || {})[r.a] = r.n;
   return {
     at: Date.now(), today: t, days, me: !!me, first: first.day || null,
-    active: act, total, new7: new7.n || 0, series, newS,
+    range: rng, active: act, total, new7: new7.n || 0, series, newS,
     ret: { d7: ret7, d30: ret30 },
     by: { dv, os, br, cc, v, ins },
     flags: { n: dflags.n || 0, st: dflags.st || 0, dk: dflags.dk || 0, un: uflags.n || 0, li: uflags.li || 0 },
@@ -172,7 +173,7 @@ export default {
       if (p.startsWith('/admin/')) {
         if (!(await isOwner(req, env))) return json(req, { ok: false, err: 'auth' }, 403);
         if (p === '/admin/stats') {
-          const dd = [7, 30, 90, 0].includes(+url.searchParams.get('days')) ? +url.searchParams.get('days') : 30;
+          const dd = [1, 7, 30, 90, 0].includes(+url.searchParams.get('days')) ? +url.searchParams.get('days') : 30;
           return json(req, await stats(env, dd, url.searchParams.get('me') === '1'));
         }
         if (p === '/admin/tg' && req.method === 'GET') return json(req, { token: !!env.TG_TOKEN, linked: !!(await kvGet(env, 'tg_chat')) });
