@@ -153,7 +153,7 @@ export default {
       }
       return json(req, { ok: false }, 404);
     } catch (e) {
-      return json(req, { ok: false, err: 'server' }, 500);
+      return json(req, { ok: false, err: 'server', detail: String((e && e.message) || e).slice(0, 300) }, 500);
     }
   },
 };

@@ -1,6 +1,6 @@
 // אקורדי – שומר את קבצי האפליקציה בטלפון כדי שתעבוד גם בלי אינטרנט.
 // V מתעדכן אוטומטית בכל שינוי בקבצים (git pre-commit), וכך הטלפון יודע שיש גרסה חדשה.
-const V='c0ffb90be1';
+const V='7b793dbd00';
 const C='akordi-'+V;
 const ASSETS=['./','index.html','icon.svg','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png','fonts/Alef-Regular.ttf','fonts/Alef-Bold.ttf','fonts/OpenSans500-he.woff','vendor/jspdf.umd.min.js','privacy.html','terms.html','legal.css'];
 self.addEventListener('install',e=>{
