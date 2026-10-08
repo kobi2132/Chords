@@ -200,7 +200,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 .lim{text-align:start;font-size:.82rem;color:var(--mut);margin:10px auto 0;padding-inline-start:1.2em;max-width:340px}.lim li{margin:3px 0}
 .chk{display:flex;gap:8px;align-items:flex-start;text-align:start;font-size:.9rem;margin:12px 0}.chk input{margin-top:3px}
 .acc{background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:12px;margin:8px 0}
-.cld.need{color:#d97706;border-color:#d97706}.cld.off{color:var(--mut)}.cld.err{color:#dc2626;border-color:#dc2626}
+.cld.ok{color:#16a34a;border-color:#16a34a}.cld.need{color:#d97706;border-color:#d97706}.cld.off{color:var(--mut)}.cld.err{color:#dc2626;border-color:#dc2626}
 .cld.busy svg{animation:pul 1s ease-in-out infinite}@keyframes pul{50%{opacity:.35}}
 @media (prefers-reduced-motion:reduce){.cld.busy svg{animation:none}}
 .wel .nudge{text-align:start;margin:-24px 0 24px}.nudge{display:flex;align-items:center;gap:8px;background:var(--hl);border-radius:10px;padding:10px 12px;margin:4px 0 10px;font-size:.9rem}.nudge span{flex:1}
@@ -879,6 +879,7 @@ const IB={
  plus:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
  cloud:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .4-7.98A6 6 0 0 0 6.3 9.6 4.5 4.5 0 0 0 7 18.5z"/></svg>',
  cloudOk:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .4-7.98A6 6 0 0 0 6.3 9.6 4.5 4.5 0 0 0 7 18.5z"/><path d="M9.5 14l2 2 3.5-3.5"/></svg>',
+ cloudSync:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .4-7.98A6 6 0 0 0 6.3 9.6 4.5 4.5 0 0 0 7 18.5z"/><path d="M14.6 12.4a2.8 2.8 0 1 0-.2 3.2M14.8 10.6v1.9h-1.9"/></svg>',
  cloudNeed:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .4-7.98A6 6 0 0 0 6.3 9.6 4.5 4.5 0 0 0 7 18.5z"/><path d="M12 11v3M12 16.2v.1"/></svg>',
  sort:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4v16M3.5 16.5L7 20l3.5-3.5M14 6h7M14 11h5M14 16h3"/></svg>',
  dots:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg>',
@@ -1065,7 +1066,7 @@ function loadTok(){try{const o=JSON.parse(localStorage.getItem('chords_tok')||'n
 let lastSync=0;
 function setCloud(s){cloudSt=s;paintCloud()}
 function paintCloud(){const b=document.getElementById('cloudBtn');if(!b)return;
-  const m={off:['cloudNeed','אין חיבור לאינטרנט. הסנכרון ימשיך כשהחיבור יחזור'],ok:['cloudOk','מסונכרן עם Google Drive'],busy:['cloud','מסנכרן...'],need:['cloudNeed','לחץ לסנכרון'],err:['cloudNeed','הסנכרון נכשל. לחץ לנסות שוב']}[cloudSt]||['cloud',''];
+  const m={off:['cloudNeed','אין חיבור לאינטרנט. הסנכרון ימשיך כשהחיבור יחזור'],ok:['cloudOk','מסונכרן עם Google Drive'],busy:['cloud','מסנכרן...'],need:['cloudSync','לחץ לסנכרון'],err:['cloudNeed','הסנכרון נכשל. לחץ לנסות שוב']}[cloudSt]||['cloud',''];
   b.innerHTML=IB[m[0]];b.setAttribute('aria-label',m[1]);b.title=m[1];b.className='b ic cld '+cloudSt}
 function loadGIS(){if(gisP)return gisP;gisP=new Promise((res,rej)=>{if(window.google&&google.accounts&&google.accounts.oauth2)return res();const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=()=>res();s.onerror=()=>{gisP=null;rej()};document.head.append(s)});return gisP}
 const REDIR=location.origin+location.pathname.replace(/index\.html$/,'');
