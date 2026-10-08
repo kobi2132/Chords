@@ -46,10 +46,12 @@ async function ping(req, env, b) {
   const id = str(b.id, 40);
   if (!id || !/^[a-z0-9-]{8,40}$/i.test(id)) return json(req, { ok: false }, 400);
   const d = today(), cc = str((req.cf && req.cf.country) || '', 2);
+  const uk = typeof b.u === 'string' && /^[a-f0-9]{32}$/.test(b.u) ? b.u : null;
   const ev = counters(b.ev, 40), bn = {};
   if (b.bn && typeof b.bn === 'object') for (const k of ['inst', 'login', 'upd']) if (b.bn[k]) bn[k] = counters(b.bn[k], 5);
   const st = [
-    env.DB.prepare('INSERT INTO devices (id, first, last) VALUES (?1, ?2, ?2) ON CONFLICT(id) DO UPDATE SET last = ?2').bind(id, d),
+    // u: קוד מוצפן חד-כיווני של משתמש מחובר (אותו קוד בכל המכשירים שלו). מכשיר שהתחבר פעם נשאר משויך למשתמש
+    env.DB.prepare('INSERT INTO devices (id, first, last, u) VALUES (?1, ?2, ?2, ?3) ON CONFLICT(id) DO UPDATE SET last = ?2, u = COALESCE(?3, u)').bind(id, d, uk),
     env.DB.prepare(`INSERT INTO daily (day,id,v,dv,os,br,cc,st,li,dk,ins,ns,nf,he,en,ev,bn) VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17)
       ON CONFLICT(day,id) DO UPDATE SET v=?3,dv=?4,os=?5,br=?6,cc=?7,st=?8,li=?9,dk=?10,ins=?11,ns=?12,nf=?13,he=?14,en=?15,ev=?16,bn=?17`)
       .bind(d, id, str(b.v, 16), str(b.dv, 12), str(b.os, 12), str(b.br, 20), cc, flag(b.st), flag(b.li), flag(b.dk), str(b.ins, 1),
@@ -83,25 +85,35 @@ async function feedback(req, env, b) {
   return json(req, { ok: true });
 }
 
+// משתמש = משתמש רשום (לפי הקוד שלו, בכל המכשירים) או מכשיר של משתמש לא רשום
+const K = "COALESCE(v.u, 'd:' || v.id)";
 async function stats(env) {
   const D = env.DB, t = today(), d7 = dayAgo(6), d30 = dayAgo(29);
   const one = async (sql, ...a) => (await D.prepare(sql).bind(...a).first()) || {};
   const all = async (sql, ...a) => (await D.prepare(sql).bind(...a).all()).results || [];
+  const J = 'FROM daily d JOIN devices v ON v.id = d.id';
   // לכל מכשיר שהיה פעיל ב-30 הימים האחרונים – הסיכום האחרון שלו
-  const LATEST = `SELECT d.* FROM daily d JOIN (SELECT id, MAX(day) md FROM daily WHERE day >= ?1 GROUP BY id) x ON d.id=x.id AND d.day=x.md`;
-  const by = col => all(`SELECT ${col} k, COUNT(*) n FROM (${LATEST}) GROUP BY ${col} ORDER BY n DESC LIMIT 20`, d30);
-  const [act, total, series, newS, ret7, ret30, dv, os, br, cc, v, ins, flags, content, evRows, bnRows, errs, fbOpen] = await Promise.all([
-    one(`SELECT COUNT(DISTINCT CASE WHEN day=?1 THEN id END) dau, COUNT(DISTINCT CASE WHEN day>=?2 THEN id END) wau, COUNT(DISTINCT id) mau FROM daily WHERE day>=?3`, t, d7, d30),
-    one('SELECT COUNT(*) n FROM devices'),
-    all('SELECT day, COUNT(*) n FROM daily WHERE day>=?1 GROUP BY day ORDER BY day', d30),
-    all('SELECT first day, COUNT(*) n FROM devices WHERE first>=?1 GROUP BY first ORDER BY first', d30),
-    // חזרה: מהמכשירים שהצטרפו לפני 8 עד 60 יום – כמה נראו שוב אחרי 7 ימים או יותר
-    one(`SELECT COUNT(*) n, SUM(EXISTS(SELECT 1 FROM daily d WHERE d.id=v.id AND d.day>=date(v.first,'+7 day'))) r FROM devices v WHERE v.first BETWEEN ?1 AND ?2`, dayAgo(60), dayAgo(8)),
-    one(`SELECT COUNT(*) n, SUM(EXISTS(SELECT 1 FROM daily d WHERE d.id=v.id AND d.day>=date(v.first,'+30 day'))) r FROM devices v WHERE v.first BETWEEN ?1 AND ?2`, dayAgo(120), dayAgo(31)),
-    by('dv'), by('os'), by('br'), by('cc'), by('v'), by('ins'),
-    one(`SELECT COUNT(*) n, SUM(st) st, SUM(li) li, SUM(dk) dk FROM (${LATEST})`, d30),
-    one(`SELECT AVG(ns) ns, AVG(nf) nf, SUM(he) he, SUM(en) en, MAX(ns) mx FROM (${LATEST})`, d30),
-    all(`SELECT j.key k, SUM(j.value) n, COUNT(DISTINCT d.id) u FROM daily d, json_each(d.ev) j WHERE d.day>=?1 GROUP BY j.key ORDER BY u DESC`, d30),
+  const LD = `SELECT d.* FROM daily d JOIN (SELECT id, MAX(day) md FROM daily WHERE day >= ?1 GROUP BY id) x ON d.id=x.id AND d.day=x.md`;
+  // לכל משתמש שהיה פעיל ב-30 הימים האחרונים – הסיכום האחרון שלו (מכל מכשיר)
+  const LU = `SELECT * FROM (SELECT d.*, ${K} k, (v.u IS NOT NULL) reg, ROW_NUMBER() OVER (PARTITION BY ${K} ORDER BY d.day DESC) rn ${J} WHERE d.day >= ?1) WHERE rn = 1`;
+  const byD = col => all(`SELECT ${col} k, COUNT(*) n FROM (${LD}) GROUP BY ${col} ORDER BY n DESC LIMIT 20`, d30);
+  const ret = days => one(`WITH us AS (SELECT ${K} k, MIN(v.first) f FROM devices v GROUP BY ${K})
+    SELECT COUNT(*) n, SUM(EXISTS(SELECT 1 FROM daily d JOIN devices v ON v.id = d.id WHERE ${K} = us.k AND d.day >= date(us.f, '+${days} day'))) r
+    FROM us WHERE f BETWEEN ?1 AND ?2`, dayAgo(days === 7 ? 60 : 120), dayAgo(days + 1));
+  const [act, total, series, newS, ret7, ret30, dv, os, br, cc, v, ins, dflags, uflags, content, evRows, bnRows, errs, fbOpen] = await Promise.all([
+    one(`SELECT COUNT(DISTINCT CASE WHEN d.day=?1 THEN ${K} END) dau, COUNT(DISTINCT CASE WHEN d.day=?1 THEN v.u END) dauR,
+      COUNT(DISTINCT CASE WHEN d.day>=?2 THEN ${K} END) wau, COUNT(DISTINCT CASE WHEN d.day>=?2 THEN v.u END) wauR,
+      COUNT(DISTINCT ${K}) mau, COUNT(DISTINCT v.u) mauR ${J} WHERE d.day>=?3`, t, d7, d30),
+    one(`SELECT COUNT(DISTINCT ${K}) n, COUNT(DISTINCT v.u) r, COUNT(*) dev, SUM(v.u IS NOT NULL) devR FROM devices v`),
+    all(`SELECT d.day day, COUNT(DISTINCT ${K}) n, COUNT(DISTINCT v.u) r ${J} WHERE d.day>=?1 GROUP BY d.day ORDER BY d.day`, d30),
+    all(`SELECT f day, COUNT(*) n, SUM(r) r FROM (SELECT ${K} k, MIN(v.first) f, MAX(v.u IS NOT NULL) r FROM devices v GROUP BY ${K}) WHERE f>=?1 GROUP BY f ORDER BY f`, d30),
+    ret(7), ret(30),
+    byD('dv'), byD('os'), byD('br'), byD('cc'), byD('v'),
+    all(`SELECT ins k, COUNT(*) n FROM (${LU}) GROUP BY ins ORDER BY n DESC`, d30),
+    one(`SELECT COUNT(*) n, SUM(st) st, SUM(dk) dk FROM (${LD})`, d30),
+    one(`SELECT COUNT(*) n, SUM(reg) li FROM (${LU})`, d30),
+    one(`SELECT AVG(ns) ns, AVG(nf) nf, SUM(he) he, SUM(en) en, MAX(ns) mx FROM (${LU})`, d30),
+    all(`SELECT j.key k, SUM(j.value) n, COUNT(DISTINCT ${K}) u ${J}, json_each(d.ev) j WHERE d.day>=?1 GROUP BY j.key ORDER BY u DESC`, d30),
     all(`SELECT b.key k, s.key a, SUM(s.value) n FROM daily d, json_each(d.bn) b, json_each(b.value) s WHERE d.day>=?1 GROUP BY b.key, s.key`, d30),
     all('SELECT msg, v, SUM(n) n, MAX(day) last FROM errors WHERE day>=?1 GROUP BY msg, v ORDER BY n DESC LIMIT 30', d30),
     one('SELECT COUNT(*) n FROM feedback WHERE done=0'),
@@ -109,10 +121,11 @@ async function stats(env) {
   const bn = {};
   for (const r of bnRows) (bn[r.k] = bn[r.k] || {})[r.a] = r.n;
   return {
-    at: Date.now(), active: act, total: total.n || 0, series, newS,
+    at: Date.now(), active: act, total, series, newS,
     ret: { d7: ret7, d30: ret30 },
     by: { dv, os, br, cc, v, ins },
-    flags, content, ev: evRows, bn, errs, fbOpen: fbOpen.n || 0,
+    flags: { n: dflags.n || 0, st: dflags.st || 0, dk: dflags.dk || 0, un: uflags.n || 0, li: uflags.li || 0 },
+    content, ev: evRows, bn, errs, fbOpen: fbOpen.n || 0,
   };
 }
 

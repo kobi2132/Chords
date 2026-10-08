@@ -1,6 +1,7 @@
 -- אקורדי – מסד הנתונים של שרת הסטטיסטיקה (Cloudflare D1)
 -- מכשיר = מספר אקראי שנוצר באפליקציה. בלי מייל, בלי שם, בלי כתובת IP.
-CREATE TABLE IF NOT EXISTS devices (id TEXT PRIMARY KEY, first TEXT NOT NULL, last TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS devices (id TEXT PRIMARY KEY, first TEXT NOT NULL, last TEXT NOT NULL, u TEXT);
+CREATE INDEX IF NOT EXISTS devices_u ON devices(u);
 -- סיכום יומי אחד לכל מכשיר
 CREATE TABLE IF NOT EXISTS daily (
   day TEXT NOT NULL, id TEXT NOT NULL,
