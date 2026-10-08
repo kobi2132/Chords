@@ -122,6 +122,11 @@ export default {
     const p = new URL(req.url).pathname.replace(/\/+$/, '') || '/';
     try {
       if (p === '/') return json(req, { ok: true, app: 'akordi' });
+      // הודעה לכל המשתמשים – גם למי שכיבה את שליחת נתוני השימוש
+      if (p === '/msg' && req.method === 'GET') {
+        const m = await env.DB.prepare('SELECT mid, text, until FROM msg WHERE k=1').first();
+        return json(req, { msg: m && (!m.until || m.until > Date.now()) ? m : null });
+      }
       if (req.method === 'POST' && (p === '/ping' || p === '/feedback')) {
         const len = +(req.headers.get('Content-Length') || 0);
         if (len > 20000) return json(req, { ok: false }, 413);
