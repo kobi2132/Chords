@@ -630,7 +630,7 @@ function list(){
   const hdr=el('div','hdr'),icr=el('div','icr');
   icr.append(ibt('film',()=>{galSong=null;v='gal';render()},'b ic','הסרטונים שלי'),ibt('gear',()=>{v='set';render()},'b ic','הגדרות'));
   const mt0=el('span','mt'),ml=el('img','mlogo');ml.src='icon.svg';ml.alt='';mt0.append(ml,'אקורדי');mt0.setAttribute('aria-hidden','true');icr.prepend(mt0);icr.classList.add('stk');
-  if(acct){const cb=ibt('cloud',()=>{if(cloudSt==='off'){toast('אין חיבור לאינטרנט. השירים נשמרים בטלפון ויסונכרנו כשהחיבור יחזור',3500);return}if(cloudSt==='need'||cloudSt==='err')signIn(false);else{v='set';render()}},'b ic cld');cb.id='cloudBtn';icr.insertBefore(cb,icr.children[1]||null);paintCloud()}
+  if(acct){const cb=ibt('cloud',()=>{if(cloudSt==='off'){toast('אין חיבור לאינטרנט. השירים נשמרים בטלפון ויסונכרנו כשהחיבור יחזור',3500);return}if(cloudSt==='busy'||syncing){toast('מסנכרן...');return}if(tokOk())syncNow();else signIn(false)},'b ic cld');cb.id='cloudBtn';icr.insertBefore(cb,icr.children[1]||null);paintCloud()}
   const brd=el('div','brand'),blg=el('img','blogo'),btx=el('div','btx'),h10=el('h1','sti','אקורדי');blg.src='icon.svg';blg.alt='';btx.append(h10);
   if(myName())btx.append(el('p','hello','שלום, '+myName()));
   brd.append(blg,btx);hdr.append(brd);
@@ -1056,6 +1056,10 @@ const setWel=()=>{try{localStorage.setItem('chords_wel','1')}catch(e){}};
 function markDirty(){try{localStorage.setItem('chords_dirty','1')}catch(e){}if(!acct)return;clearTimeout(pushT);pushT=setTimeout(()=>{if(!navigator.onLine)setCloud('off');else if(tokOk())syncNow();else setCloud('need')},3000)}
 const isDirty=()=>{try{return localStorage.getItem('chords_dirty')==='1'}catch(e){return false}};
 const tokOk=()=>tok&&Date.now()<tokExp;
+// מפתח הגישה של גוגל נשמר במכשיר עד שהוא פג (שעה), כדי שפתיחה מחדש בתוך השעה תסתנכרן לבד
+function saveTok(){try{if(tok&&tokExp>Date.now())localStorage.setItem('chords_tok',JSON.stringify({t:tok,e:tokExp}));else localStorage.removeItem('chords_tok')}catch(e){}}
+function loadTok(){try{const o=JSON.parse(localStorage.getItem('chords_tok')||'null');if(o&&o.t&&o.e>Date.now()+60000){tok=o.t;tokExp=o.e}else localStorage.removeItem('chords_tok')}catch(e){}}
+let lastSync=0;
 function setCloud(s){cloudSt=s;paintCloud()}
 function paintCloud(){const b=document.getElementById('cloudBtn');if(!b)return;
   const m={off:['cloudNeed','אין חיבור לאינטרנט. הסנכרון ימשיך כשהחיבור יחזור'],ok:['cloudOk','מסונכרן עם Google Drive'],busy:['cloud','מסנכרן...'],need:['cloudNeed','לחץ לסנכרון'],err:['cloudNeed','הסנכרון נכשל. לחץ לנסות שוב']}[cloudSt]||['cloud',''];
@@ -1074,12 +1078,12 @@ function signIn(first){
   if(!(window.google&&google.accounts&&google.accounts.oauth2)){toast('רגע, טוען את Google...');loadGIS().catch(()=>toast('לא הצלחתי להתחבר ל-Google. בדוק חיבור לאינטרנט'));return}
   if(!tc)tc=google.accounts.oauth2.initTokenClient({client_id:GCID,scope:GSCOPE,
     callback:r=>{if(!r||r.error||!r.access_token){setCloud('need');toast('ההתחברות בוטלה');return}
-      tok=r.access_token;tokExp=Date.now()+((+r.expires_in||3600)-60)*1000;const f=afterTok;afterTok=null;if(f)f();else syncNow()},
+      tok=r.access_token;tokExp=Date.now()+((+r.expires_in||3600)-60)*1000;saveTok();const f=afterTok;afterTok=null;if(f)f();else syncNow()},
     error_callback:()=>{setCloud('need');toast('ההתחברות בוטלה')}});
   afterTok=first?onFirstLogin:null;
   try{tc.requestAccessToken(acct&&acct.email&&!first?{prompt:'',hint:acct.email}:{prompt:'select_account'})}catch(e){toast('לא הצלחתי לפתוח את חלון ההתחברות')}
 }
-async function gfetch(url,opt){opt=opt||{};opt.headers=Object.assign({Authorization:'Bearer '+tok},opt.headers||{});const r=await fetch(url,opt);if(r.status===401){tok=null;throw new Error('auth')}if(!r.ok)throw new Error('http '+r.status);return r}
+async function gfetch(url,opt){opt=opt||{};opt.headers=Object.assign({Authorization:'Bearer '+tok},opt.headers||{});const r=await fetch(url,opt);if(r.status===401){tok=null;saveTok();throw new Error('auth')}if(!r.ok)throw new Error('http '+r.status);return r}
 async function onFirstLogin(){
   try{const u=await (await gfetch('https://www.googleapis.com/oauth2/v3/userinfo')).json();
     const old=acct&&acct.sub===u.sub?acct:null;
@@ -1104,7 +1108,7 @@ function mergeRemote(o){
 async function syncNow(){
   if(!acct)return;if(!navigator.onLine){setCloud('off');return}if(!tokOk()){setCloud('need');return}
   if(syncing){clearTimeout(pushT);pushT=setTimeout(syncNow,1500);return}
-  syncing=true;setCloud('busy');
+  syncing=true;lastSync=Date.now();setCloud('busy');
   try{
     const q=encodeURIComponent("name='songs.json'");
     const l=await (await gfetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q='+q+'&fields=files(id)')).json();
@@ -1123,7 +1127,7 @@ async function syncNow(){
 }
 function signOut(){
   try{if(tok&&window.google&&google.accounts&&google.accounts.oauth2)google.accounts.oauth2.revoke(tok,()=>{})}catch(e){}
-  tok=null;tokExp=0;acct=null;saveAcct();setCloud('need');toast('התנתקת. השירים נשארו במכשיר הזה');render();
+  tok=null;tokExp=0;saveTok();acct=null;saveAcct();setCloud('need');toast('התנתקת. השירים נשארו במכשיר הזה');render();
 }
 const DEMO_ID=1000;
 const demoSong=()=>({id:DEMO_ID,title:'ברוכים הבאים',artist:'שיר לדוגמה',link:'',dir:'rtl',bpm:90,dv:2,upd:Date.now(),lines:JSON.parse(JSON.stringify(DEMO_LINES))});
@@ -1569,7 +1573,7 @@ let oauthBack=null,oauthErr=false;
   try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
   if(!s0||q.get('state')!==s0.st)return;
   if(s0.pend){try{pend=JSON.parse(s0.pend)}catch(e){}}
-  if(q.get('access_token')){tok=q.get('access_token');tokExp=Date.now()+((+q.get('expires_in')||3600)-60)*1000;oauthBack=s0}
+  if(q.get('access_token')){tok=q.get('access_token');tokExp=Date.now()+((+q.get('expires_in')||3600)-60)*1000;saveTok();oauthBack=s0}
   else oauthErr=true;
 })();
 if(oauthBack){
@@ -1577,7 +1581,8 @@ if(oauthBack){
   else{const s2=oauthBack.cid!=null?S.find(x=>x.id===oauthBack.cid):null;if(s2){cur=s2;t=s2.tp||0;v='vw'}else if(oauthBack.v==='set')v='set';syncNow()}
 }else if(oauthErr){setTimeout(()=>toast('ההתחברות בוטלה'),300);if(pend&&!welSeen())v='wel'}
 if(!oauthBack&&!/^#s=/.test(location.hash)&&!acct&&!welSeen())v='wel';
-if(acct){if(!isIOS)loadGIS().catch(()=>{});if(!tokOk())setCloud('need')}
+if(acct){if(!isIOS)loadGIS().catch(()=>{});if(!tok)loadTok();if(!tokOk())setCloud('need');else if(!oauthBack)setTimeout(syncNow,300)}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&acct&&tokOk()&&!syncing&&Date.now()-lastSync>30000)syncNow()});
 (function(){const vv=window.visualViewport;if(!vv)return;const st=document.documentElement.style;
   const upd=()=>{st.setProperty('--vvh',vv.height+'px');st.setProperty('--vvt',vv.offsetTop+'px');st.setProperty('--kb',Math.max(0,innerHeight-vv.height-vv.offsetTop)+'px')};
   vv.addEventListener('resize',upd);vv.addEventListener('scroll',upd);upd()})();
