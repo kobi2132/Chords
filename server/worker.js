@@ -54,7 +54,8 @@ async function ping(req, env, b) {
   const d = today(), cc = str((req.cf && req.cf.country) || '', 2);
   const uk = typeof b.u === 'string' && /^[a-f0-9]{32}$/.test(b.u) ? b.u : null, me = flag(b.me);
   const ev = counters(b.ev, 40), bn = {};
-  if (b.bn && typeof b.bn === 'object') for (const k of ['inst', 'login', 'upd']) if (b.bn[k]) bn[k] = counters(b.bn[k], 5);
+  // באנרים: כל שם קצר באותיות לטיניות (inst, login, help, upd…) – כך באנר חדש לא דורש עדכון שרת
+  if (b.bn && typeof b.bn === 'object') for (const k of Object.keys(b.bn).slice(0, 8)) if (/^[a-z]{2,10}$/.test(k) && b.bn[k]) bn[k] = counters(b.bn[k], 5);
   const st = [
     // u: קוד מוצפן חד-כיווני של משתמש מחובר (אותו קוד בכל המכשירים שלו). מכשיר שהתחבר פעם נשאר משויך למשתמש
     // dev: מכשיר של בעל האפליקציה (לא נספר בסטטיסטיקה, אלא אם בוחרים "כולל אותי")
