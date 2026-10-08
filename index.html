@@ -87,7 +87,7 @@ textarea.f{min-height:300px;line-height:1.6}
 .bd .cr:not(.sec)+.ln:not(.hc){margin-top:.7em}
 .cr.sec .hd{font-weight:700;font-size:.8em;margin-bottom:0}
 .cx{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font-weight:700;color:var(--ch);direction:ltr;justify-content:flex-start;font-size:.8em}
-.cr.rtl .cx{justify-content:flex-end}
+.cr.rtl .cx{justify-content:flex-end}.cx.bars{gap:8px 10px}.cx .bar{color:var(--mut);font-weight:400;opacity:.7}.cc.c1{position:relative}.arw{position:absolute;bottom:100%;left:0;font-weight:400;color:var(--mut);pointer-events:none;line-height:1.3;font-size:1.1em}.cr.arm .cx{margin-top:1.3em}
 .cx .cc{font:inherit}
 .lb{background:none;border:0;border-bottom:1px dashed var(--bd);flex:1;padding:4px 0;font-size:.85rem}
 .er{display:flex;align-items:flex-start;gap:6px}.er>.ln,.er>.cr{flex:1;min-width:0}
@@ -186,7 +186,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 .sgi{height:40px;border-radius:12px;padding:0 10px}
 .vctl{gap:8px 10px}
 .pdfbox,.pdfbox *{font-family:PdfAlef,Arial,sans-serif!important}
-.pdfbox .ch,.pdfbox .cx,.pdfbox .cc{color:#1e3a8a!important}.pdfbox .hd{color:#555!important}.pdfbox .hy{color:#888!important}
+.pdfbox .ch,.pdfbox .cx,.pdfbox .cc{color:#1e3a8a!important}.pdfbox .hd{color:#555!important}.pdfbox .hy{color:#888!important}.pdfbox .bar{color:#999!important}
 .pdfbox .pdfh{margin-bottom:16px}.pdfbox .pt{font-size:20px;font-weight:700}.pdfbox .pt.big{font-size:30px;margin-top:140px}
 .pdfbox .pm{font-size:11px;color:#555;margin-top:3px}
 .pdfbox .toc{display:flex;justify-content:space-between;gap:12px;font-size:12px;padding:6px 0;border-bottom:1px solid #ddd}.pdfbox .tn{direction:ltr;color:#555}
@@ -380,14 +380,18 @@ function rc(l,dir,edit,li){
   const hd=el('div','hd');
   if(edit){const i=el('input','lb');i.placeholder='כותרת (פתיחה, מעבר...)';i.value=l.lab||'';i.oninput=()=>{l.lab=i.value};hd.append(i)}
   else if(l.lab)hd.append(el('span','',l.lab));
-  if(first&&(edit||hasC)){const a=el('span','','→');a.title='האקורדים נקראים משמאל לימין';a.setAttribute('aria-label','האקורדים נקראים משמאל לימין');hd.append(a)}
+  const arw=first&&hasC&&dir==='rtl';
   if(hd.childNodes.length)d.append(hd);
-  const r=el('div','cx');
+  if(arw&&(edit||!hd.childNodes.length))d.classList.add('arm');
+  const r=el('div','cx'+(edit?'':' bars'));
+  const bar=()=>{const x=el('span','bar','|');x.setAttribute('aria-hidden','true');return x};
+  if(!edit&&hasC)r.append(bar());
   l.x.forEach((c,j)=>{
     const b=el(edit?'button':'span','cc'+(edit?' b':''),tr(c));
+    if(arw&&j===0){b.classList.add('c1');const a=el('span','arw','→');a.title='האקורדים נקראים משמאל לימין';a.setAttribute('aria-label','האקורדים נקראים משמאל לימין');b.append(a)}
     if(!edit)b.onclick=e=>{e.stopPropagation();onChord&&onChord(tr(c),b)};
     if(edit){b.onclick=()=>{pk=Object.assign({li,k:'x',j},pp(c));render()};if(pk&&pk.li===li&&pk.j===j)b.classList.add('on')}
-    r.append(b)});
+    r.append(b);if(!edit)r.append(bar())});
   if(edit)r.append(btn('+ אקורד',()=>{pk={li,k:'x',j:null};render()},'b'),btn('מחק שורה',()=>{cur.lines.splice(li,1);pk=null;render()},'b'));
   d.append(r);return d;
 }
