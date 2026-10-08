@@ -1591,16 +1591,27 @@ function parseChordText(txt){
   // טקסט מפורק (כל הברה בשורה נפרדת) – לא ניתן לשחזר
   const tl=raw.filter(l=>l.trim()&&!isChordLine(l)&&!label(l));
   if(tl.length>=6&&tl.filter(l=>l.trim().length<=3).length/tl.length>0.3)return{err:'frag'};
+  // עברית: אתרים עם גופן משתנה (כמו נגנו) – שורת האקורדים ארוכה מהמילים ומיושרת לימין; אתרים עם גופן קבוע (כמו Ultimate Guitar) – מיושרת לשמאל
+  const rts=[];for(let i=0;i+1<raw.length;i++){const a=raw[i],b2=raw[i+1];if(isChordLine(a)&&b2.trim()&&!isChordLine(b2)&&detect(b2)==='rtl'){const m=a.match(/^.*\S/);rts.push(m[0].length/Math.max(1,chars(b2.trim()).length))}}
+  const prop=rts.length>0&&rts.reduce((x,y)=>x+y,0)/rts.length>1.12;
   const out=[];let pend=null,blank=false,any=false;
   const head=()=>{const last=out[out.length-1];if(pend!=null)out.push({t:'',c:{},ty:'c',x:[],lab:pend});else if(blank&&any&&last&&last.ty!=='c')out.push({t:'',c:{},ty:'c',x:[],lab:''});pend=null;blank=false};
   const map=(cl,ly)=>{const lead=ly.length-ly.replace(/^\s+/,'').length,t=ly.trim(),len=chars(t).length,ps=[];
     const re=/\S+/g;let m;while((m=re.exec(cl)))if(CHRE.test(m[0]))ps.push([m.index-lead,m[0]]);
     const c={};if(!ps.length||!len)return{t,c};
-    const clen=Math.max(...ps.map(([i,x])=>i+x.length)),sc=ps[ps.length-1][0]>len-1+3;
     const ws=[];chars(t).forEach((ch,i,a)=>{if(ch!==' '&&(i===0||a[i-1]===' '))ws.push(i)});
+    const snap=(k,r)=>{const near=ws.reduce((b,w)=>Math.abs(w-k)<Math.abs(b-k)?w:b,ws[0]);return Math.abs(near-k)<=r?near:k};
+    const put=(k,x)=>{k=Math.max(0,k);if(k>=len)k=len;c[k]=c[k]?c[k]+' '+x:x};
+    if(detect(t)==='rtl'){
+      // עברית: שורת האקורדים (טקסט לועזי) נספרת משמאל, כלומר הפוך לכיוון המילים
+      const ps2=[];const re2=/\S+/g;let m2;while((m2=re2.exec(cl)))if(CHRE.test(m2[0]))ps2.push([m2.index,m2[0]]);
+      const Lc=Math.max(...ps2.map(([i,x])=>i+x.length)),sc=prop;
+      const tc=chars(t);ps2.forEach(([i,x])=>{let k=sc?Math.round((Lc-i-x.length)*len/Lc):len-i-x.length;if(sc)k=snap(k,3);else if(tc[k]===' ')k++;put(k,x)});
+      return{t,c}}
+    const clen=Math.max(...ps.map(([i,x])=>i+x.length)),sc=ps[ps.length-1][0]>len-1+3;
     ps.forEach(([i,x])=>{let k=Math.max(0,i);
-      if(sc){k=Math.round(k*len/clen);const near=ws.reduce((b,w)=>Math.abs(w-k)<Math.abs(b-k)?w:b,ws[0]);if(Math.abs(near-k)<=2)k=near}
-      if(k>=len)k=len;c[k]=c[k]?c[k]+' '+x:x});
+      if(sc){k=snap(Math.round(k*len/clen),2)}
+      put(k,x)});
     return{t,c}};
   for(let i=0;i<raw.length;i++){const L=raw[i];
     if(!L.trim()){blank=true;continue}
