@@ -171,6 +171,7 @@ textarea.f.nta{min-height:0;line-height:1.4;resize:vertical}
 input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-search-decoration{-webkit-appearance:none;appearance:none;display:none}
 .dlg .plist{max-height:min(45vh,340px);overflow-y:auto;margin:6px 0 12px}
 .dlg .pick{margin:4px 0;padding:8px 10px}
+.dvc{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:2px 14px;margin:8px 0 14px}.dvc .kv{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px solid var(--bd)}.dvc .kv:last-child{border-bottom:0}.dvc .kv span:first-child{color:var(--mut);font-size:.9rem;flex:none}.dvc .kv span:last-child{text-align:end;overflow-wrap:anywhere}.dvc .kv .ok{color:#16a34a}.dvc .kv .wr{color:#d97706}.dvc .kv .bd{color:#dc2626}.dvc .ac{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--bd)}.dvc .ac:last-child{border-bottom:0}.dvc .ac div{flex:1}.dvc .ac small{display:block;color:var(--mut);font-size:.82rem;margin-top:2px}.dvc .ac .b{flex:none}.dvt .b{flex:1;padding-inline:4px}.dve{text-align:center;color:var(--mut);padding:28px 12px}
 .ipk .ipt{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 4px}.ipk .ipc{color:var(--mut);font-size:.9rem}.ipk .ipx{font-size:.75rem;color:var(--mut);border:1px solid var(--bd);border-radius:6px;padding:1px 6px;white-space:nowrap}.ipk .b:disabled{opacity:.5;cursor:default}
 .nfr{display:flex;gap:6px;margin:4px 0}.nfr .f{margin:0;flex:1}
 .fpb{display:flex;align-items:center;gap:8px;text-align:start;width:100%}.fpb svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;flex:none}
@@ -663,8 +664,9 @@ function list(){
   const brd=el('div','brand'),blg=el('img','blogo'),btx=el('div','btx'),h10=el('h1','sti','אקורדי');blg.src='icon.svg';blg.alt='';btx.append(h10);
   if(myName())btx.append(el('p','hello','שלום, '+myName()));
   brd.append(blg,btx);hdr.append(brd);
-  if(!acct&&S.length>=3&&nudgeOk('login'))hdr.append(mkNudge('login','השירים שלך שמורים רק במכשיר הזה. התחבר כדי לגבות אותם.','התחבר',()=>{v='wel';render()},'לא נציג את זה שוב. אפשר להתחבר בכל זמן מההגדרות'));
-  else if(instNudgeOk())hdr.append(instNudge());
+  const fN=devForce;devForce=null;
+  if(fN==='login'||(!fN&&!acct&&S.length>=3&&nudgeOk('login')))hdr.append(mkNudge('login','השירים שלך שמורים רק במכשיר הזה. התחבר כדי לגבות אותם.','התחבר',()=>{v='wel';render()},'לא נציג את זה שוב. אפשר להתחבר בכל זמן מההגדרות'));
+  else if(fN==='inst'||(!fN&&instNudgeOk()))hdr.append(instNudge());
   A.append(icr,hdr);stickTitle(icr,h10,mt0);
   {const fd=el('div','dd fabd'),fm=el('div','mn le');fm.hidden=true;
    const fb=ibt('plus',()=>{fm.hidden=!fm.hidden;if(!fm.hidden)watchMenu(fd,fm)},'fab','הוספת שיר');
@@ -1121,7 +1123,7 @@ async function gfetch(url,opt){opt=opt||{};opt.headers=Object.assign({Authorizat
 async function onFirstLogin(){
   try{const u=await (await gfetch('https://www.googleapis.com/oauth2/v3/userinfo')).json();
     const old=acct&&acct.sub===u.sub?acct:null;
-    acct={sub:u.sub,email:u.email||'',name:u.name||'',given:u.given_name||'',dname:old?old.dname:'',news:old?!!old.news:false,upd:old?(old.upd||0):0};saveAcct();setWel();
+    acct={sub:u.sub,email:u.email||'',name:u.name||'',given:u.given_name||'',dname:old?old.dname:'',news:old?!!old.news:false,upd:old?(old.upd||0):0};saveAcct();setWel();chkDev();
     v='load';render();
     await syncNow();
     if(acct&&acct.upd>0&&acct.dname){toast('ברוך שובך, '+acct.dname);finishWel()}
@@ -1154,14 +1156,14 @@ async function syncNow(){
     if(id)await gfetch('https://www.googleapis.com/upload/drive/v3/files/'+id+'?uploadType=media',{method:'PATCH',headers:{'Content-Type':'application/json'},body});
     else{const bd='chordsb'+Date.now(),mp='--'+bd+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify({name:'songs.json',parents:['appDataFolder']})+'\r\n--'+bd+'\r\nContent-Type: application/json\r\n\r\n'+body+'\r\n--'+bd+'--';
       await gfetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{'Content-Type':'multipart/related; boundary='+bd},body:mp})}
-    try{localStorage.removeItem('chords_dirty')}catch(e){}
+    try{localStorage.removeItem('chords_dirty');localStorage.setItem('chords_lastok',String(Date.now()))}catch(e){}
     setCloud('ok');
   }catch(e){setCloud(!navigator.onLine?'off':e&&e.message==='auth'?'need':'err')}
   finally{syncing=false}
 }
 function signOut(){
   try{if(tok&&window.google&&google.accounts&&google.accounts.oauth2)google.accounts.oauth2.revoke(tok,()=>{})}catch(e){}
-  tok=null;tokExp=0;saveTok();acct=null;saveAcct();setCloud('need');toast('התנתקת. השירים נשארו במכשיר הזה');render();
+  tok=null;tokExp=0;saveTok();acct=null;saveAcct();devOk=false;setCloud('need');toast('התנתקת. השירים נשארו במכשיר הזה');render();
 }
 const DEMO_ID=1000;
 const demoSong=()=>({id:DEMO_ID,title:'ברוכים הבאים',artist:'שיר לדוגמה',link:'',dir:'rtl',bpm:90,dv:2,upd:Date.now(),lines:JSON.parse(JSON.stringify(DEMO_LINES))});
@@ -1249,6 +1251,84 @@ function accountSection(){
   const pl=el('p','legal');const a1=el('a','','תנאי השימוש');a1.href='terms.html';a1.target='_blank';const a2=el('a','','מדיניות הפרטיות');a2.href='privacy.html';a2.target='_blank';pl.append(a1,' · ',a2);s.append(pl);
   return s;
 }
+
+// ===== עמוד מפתח – גלוי רק לבעל האפליקציה. הכפתור מוצג לפי גיבוב של המייל (המייל עצמו לא מופיע בקוד);
+// נתוני הסטטיסטיקה בשרת יהיו מוגנים בבדיקה מול Google, כך שהסתרת הכפתור היא לא ההגנה היחידה =====
+const DEVH='c5dc86eb30a74fd8597e15c6e48d02d88052cd44f0ce9e5e4467e7a37354dd0a';
+let devOk=false,devTab='info',devForce=null;
+async function chkDev(){let ok=false;
+  try{if(acct&&acct.email&&window.crypto&&crypto.subtle){const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(acct.email.trim().toLowerCase()));ok=[...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')===DEVH}}catch(e){}
+  if(ok!==devOk){devOk=ok;if(v==='set'||v==='dev')render()}}
+const ltrI=x=>'\u2066'+x+'\u2069',fmtB=n=>n==null?'–':ltrI(n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(1)+' MB');
+const fmtDT=t=>{if(!t)return '–';const d=new Date(+t),p2=x=>String(x).padStart(2,'0');return ltrI(p2(d.getDate())+'.'+p2(d.getMonth()+1)+'.'+d.getFullYear()+' '+p2(d.getHours())+':'+p2(d.getMinutes()))};
+function uaInfo(){const u=navigator.userAgent;
+  const os=isIOS?'iOS':/Android/i.test(u)?'אנדרואיד':/Windows/i.test(u)?'Windows':/Mac OS/i.test(u)?'macOS':/Linux/i.test(u)?'Linux':'אחר';
+  const br=/SamsungBrowser/.test(u)?'Samsung Internet':/EdgA?\//.test(u)?'Edge':/OPR\/|OPT\//.test(u)?'Opera':/FxiOS|Firefox/.test(u)?'Firefox':/CriOS|Chrome/.test(u)?'Chrome':/Safari/.test(u)?'Safari':'אחר';
+  const dv=/iPad|Tablet/i.test(u)||(/Android/i.test(u)&&!/Mobile/i.test(u))||(isIOS&&!/iPhone|iPod/.test(u))?'טאבלט':/Mobi|iPhone|iPod|Android/i.test(u)?'טלפון':'מחשב';
+  return{os,br,dv}}
+function devPage(){
+  const top=el('div','bar');top.append(ibt('back',()=>{v='set';render()},'b ic','חזרה'),el('b','tt','עמוד מפתח'));
+  if(!devOk){A.append(top,el('div','dve','העמוד הזה זמין רק לבעל האפליקציה.'));return}
+  const tb=el('div','tabs dvt');
+  [['stats','סטטיסטיקות'],['info','מידע'],['act','פעולות'],['fb','משובים']].forEach(([k,x])=>tb.append(btn(x,()=>{devTab=k;render()},'b'+(devTab===k?' on':''))));
+  A.append(top,tb);
+  ({stats:devStats,info:devInfo,act:devActs,fb:devFb})[devTab]();
+}
+function dvCard(title,rows){const h=el('h2','sh',title),c=el('div','dvc');rows.forEach(r=>c.append(r));A.append(h,c);return c}
+function kv(k,val,cls){const r=el('div','kv');const b=el('span',cls||'',val==null?'…':String(val));r.append(el('span','',k),b);r.set=(x,c)=>{b.textContent=x;b.className=c||''};return r}
+function dvAct(title,sub,lbl,f,cls){const r=el('div','ac'),t=el('div');t.append(el('b','',title));if(sub)t.append(el('small','',sub));const b=btn(lbl,f,'b'+(cls?' '+cls:''));r.append(t,b);return r}
+function devStats(){A.append(el('div','dvc dve','הסטטיסטיקות יופיעו כאן אחרי שנקים את השרת ב-Cloudflare: משתמשים פעילים, משתמשים חדשים וחזרה, מכשירים, התקנה והתחברות, באנרים, תוכן, פיצ\'רים, גרסאות ושגיאות.'))}
+function devFb(){A.append(el('div','dvc dve','המשובים שמשתמשים ישלחו מההגדרות יופיעו כאן אחרי שנקים את השרת.'))}
+function devInfo(){
+  const ui=uaInfo(),dark=matchMedia('(prefers-color-scheme: dark)').matches;
+  const vAct=kv('גרסה פעילה',null),vSrv=kv('גרסה באתר',null),vSt=kv('מצב',null),vGit=kv('עדכון אחרון באתר',null);
+  dvCard('גרסה',[vAct,vSrv,vSt,vGit]);
+  dvCard('מכשיר',[kv('סוג',ui.dv),kv('מערכת',ui.os),kv('דפדפן',ui.br),kv('מותקנת במסך הבית',isStandalone()?'כן':'לא'),
+    kv('מסך',ltrI(innerWidth+'×'+innerHeight+(devicePixelRatio>1?' @'+(+devicePixelRatio.toFixed(2))+'x':''))),kv('ערכת צבעים',dark?'כהה':'בהירה'),kv('אינטרנט',navigator.onLine?'מחובר':'לא מחובר',navigator.onLine?'ok':'wr')]);
+  const sUse=kv('בשימוש בדפדפן',null),sPer=kv('אחסון קבוע',null);let ls=0;try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('chords_'))ls+=(k.length+(localStorage.getItem(k)||'').length)*2}}catch(e){}
+  dvCard('אחסון',[kv('נתוני אקורדי',fmtB(ls)),sUse,sPer]);
+  const pv=S.filter(x=>x.priv).length,fv=S.filter(x=>x.fav).length;
+  dvCard('שירים במכשיר',[kv('שירים',S.length),kv('תיקיות',FOL.length),kv('פרטיים',pv),kv('מועדפים',fv),kv('מחיקות שנשמרות לסנכרון',Object.keys(DEL).length),kv('שינויים שלא סונכרנו',isDirty()?'יש':'אין',isDirty()?'wr':'ok')]);
+  const lo=(()=>{try{return +localStorage.getItem('chords_lastok')||0}catch(e){return 0}})();
+  const dSz=kv('קובץ הגיבוי ב-Drive',acct?(tokOk()?null:'צריך להתחבר מחדש'):'–'),dMod=kv('עודכן ב-Drive',acct&&tokOk()?null:'–');
+  const cs={ok:['מסונכרן','ok'],busy:['מסנכרן…',''],need:['ממתין להתחברות','wr'],err:['הסנכרון נכשל','bd'],off:['אין אינטרנט','wr']}[cloudSt]||[cloudSt,''];
+  dvCard('סנכרון',[kv('חשבון',acct?acct.email:'לא מחובר'),kv('מצב',acct?cs[0]:'–',acct?cs[1]:''),kv('סנכרון מוצלח אחרון',fmtDT(lo)),kv('ההתחברות לגוגל בתוקף עד',tokOk()?fmtDT(tokExp):'פגה',tokOk()?'':'wr'),dSz,dMod]);
+  dvCard('שרת סטטיסטיקה',[kv('מצב','עוד לא הוקם','wr')]);
+  (async()=>{try{const ks=await caches.keys(),c=ks.find(k=>k.startsWith('akordi-'));vAct.set(c?c.slice(7):'אין (לא נשמר להפעלה בלי אינטרנט)')}catch(e){vAct.set('–')}
+    let srv=null;try{const t=await (await fetch('sw.js?x='+Date.now(),{cache:'no-store'})).text();srv=(t.match(/const V='([^']+)'/)||[])[1]||null;vSrv.set(srv||'–')}catch(e){vSrv.set('אין חיבור','wr')}
+    try{const reg=await navigator.serviceWorker.getRegistration();const a=(await caches.keys()).find(k=>k.startsWith('akordi-'));
+      if(reg&&reg.waiting)vSt.set('ממתינה גרסה חדשה – צריך לרענן','wr');else if(srv&&a&&a.slice(7)!==srv)vSt.set('גרסה חדשה בדרך','wr');else if(srv)vSt.set('מעודכן','ok');else vSt.set('–')}catch(e){vSt.set('–')}
+    try{const j=await (await fetch('https://api.github.com/repos/kobi2132/Chords/commits?per_page=1')).json();vGit.set(fmtDT(Date.parse(j[0].commit.committer.date))+' – '+j[0].commit.message.split('\n')[0])}catch(e){vGit.set('–')}
+    try{const e=await navigator.storage.estimate();sUse.set(fmtB(e.usage)+' מתוך '+fmtB(e.quota))}catch(e){sUse.set('–')}
+    try{const p=await navigator.storage.persisted();sPer.set(p?'כן':'לא (הדפדפן עלול למחוק כשחסר מקום)',p?'ok':'wr')}catch(e){sPer.set('–')}
+    if(acct&&tokOk()){try{const q=encodeURIComponent("name='songs.json'");const l=await (await gfetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q='+q+'&fields=files(id,size,modifiedTime)')).json();const f=l.files&&l.files[0];
+      dSz.set(f?fmtB(+f.size):'אין עדיין');dMod.set(f?fmtDT(Date.parse(f.modifiedTime)):'–')}catch(e){dSz.set('לא הצלחתי לקרוא','bd');dMod.set('–')}}
+  })();
+}
+async function devWipeCache(){try{const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}catch(e){}
+  try{const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()))}catch(e){}}
+function devActs(){
+  dvCard('עדכון ומטמון',[
+    dvAct('בדוק עדכון עכשיו','בודק אם יש באתר גרסה חדשה','בדוק',async()=>{try{const reg=await navigator.serviceWorker.getRegistration();if(!reg){toast('אין רישום של האפליקציה בדפדפן');return}await reg.update();setTimeout(()=>{toast(reg.waiting||reg.installing?'נמצאה גרסה חדשה':'אין גרסה חדשה')},1500)}catch(e){toast('הבדיקה נכשלה')}}),
+    dvAct('נקה מטמון וטען מחדש','מוחק את הקבצים השמורים וטוען הכל מהאתר. השירים לא נמחקים','נקה',()=>dlg({title:'ניקוי מטמון',text:'האפליקציה תיטען מחדש מהאתר. השירים לא יימחקו.',ok:'נקה וטען'}).then(async ok=>{if(!ok)return;await devWipeCache();location.reload()}))]);
+  dvCard('באנרים',[
+    dvAct('באנר התקנה','מציג אותו במסך הראשי','הצג',()=>{devForce='inst';v='list';render()}),
+    dvAct('באנר התחברות','מציג אותו במסך הראשי','הצג',()=>{devForce='login';v='list';render()}),
+    dvAct('באנר גרסה חדשה','לחיצה על "רענן" רק טוענת מחדש','הצג',()=>{updShown=false;showUpd({waiting:null})}),
+    dvAct('אפס מוני באנרים','הבאנרים יחזרו להופיע כמו אצל משתמש חדש','אפס',()=>{try{['chords_ndg_inst','chords_ndg_login','chords_nudge'].forEach(k=>localStorage.removeItem(k))}catch(e){}toast('המונים אופסו')})]);
+  dvCard('סנכרון ונתונים',[
+    dvAct('סנכרן עכשיו',acct?'':'צריך להיות מחובר','סנכרן',()=>{if(!acct){toast('צריך להתחבר קודם');return}if(tokOk())syncNow().then(()=>toast(cloudSt==='ok'?'הסנכרון הושלם':'הסנכרון נכשל'));else signIn(false)}),
+    dvAct('הורד את קובץ ה-Drive','הקובץ כמו שהוא שמור בגוגל','הורד',async()=>{if(!acct||!tokOk()){toast('צריך להתחבר מחדש');return}
+      try{const q=encodeURIComponent("name='songs.json'");const l=await (await gfetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q='+q+'&fields=files(id)')).json();const id=l.files&&l.files[0]&&l.files[0].id;if(!id){toast('אין עדיין קובץ ב-Drive');return}
+        const t=await (await gfetch('https://www.googleapis.com/drive/v3/files/'+id+'?alt=media')).text();await saveFile('akordi-drive.json',t,false)}catch(e){toast('לא הצלחתי להוריד')}}),
+    dvAct('ייצא את נתוני המכשיר','כל מה שאקורדי שומרת בדפדפן, בלי מפתח ההתחברות','ייצא',async()=>{const o={};try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('chords_')&&k!=='chords_tok'&&k!=='chords_oauth'){const x=localStorage.getItem(k);try{o[k]=JSON.parse(x)}catch(e){o[k]=x}}}}catch(e){}
+      await saveFile('akordi-device.json',JSON.stringify(o,null,1),false)}),
+    dvAct('מחק את כל הנתונים במכשיר','מתאים לבדיקה של כניסה ראשונה. לא נוגע ב-Drive','מחק',()=>dlg({title:'מחיקת כל הנתונים',text:(isDirty()&&acct?'יש שינויים שעוד לא סונכרנו ל-Drive והם יאבדו. ':'')+(acct?'':'אתה לא מחובר, אז השירים יימחקו לגמרי. ')+'השירים, התיקיות, ההגדרות וההתחברות יימחקו מהמכשיר הזה.',ok:'המשך',danger:true}).then(ok=>{if(!ok)return;
+      dlg({title:'בטוח?',text:'אי אפשר לבטל את הפעולה.',ok:'מחק הכל',danger:true}).then(async ok2=>{if(!ok2)return;try{Object.keys(localStorage).filter(k=>k.startsWith('chords_')).forEach(k=>localStorage.removeItem(k))}catch(e){}await devWipeCache();location.href=location.pathname})}),'danger')]);
+  dvCard('הודעה לכל המשתמשים',[dvAct('שליחת הודעה','תופעל אחרי שנקים את השרת','בקרוב',()=>{})]).querySelector('.b').disabled=true;
+  dvCard('פיצ\'רים בבדיקה',[el('div','dve','אין כרגע פיצ\'רים בבדיקה. כשנבנה פיצ\'ר חדש, יופיע כאן מתג שמפעיל אותו רק אצלך.')]);
+}
+chkDev();
 
 /* ---------- PDF ---------- */
 let pdfLib=null,pdfFonts=null;
@@ -1412,6 +1492,7 @@ function settings(){
   const r=el('div','row');r.append(bb,btn('ייבוא קובץ',()=>fi.click(),'b'));
   sec.append(el('h2','sh','גיבוי ושחזור'),el('div','hint','הגיבוי שומר את כל השירים בקובץ אחד. בייבוא קובץ (גיבוי, או תיקייה שמישהו שלח לך), שירים חדשים מתווספים, ושיר שקיים בשני המקומות נשמר בגרסה שנערכה אחרונה.'),r,msg,fi);
   A.append(top,prefsSection(),accountSection(),sec);
+  if(devOk){const d=el('div','sec');d.append(el('h2','sh','מפתח'),el('div','hint','גלוי רק לך.'),btn('עמוד מפתח',()=>{v='dev';render()},'b'));A.append(d)}
 }
 
 const TRI='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>';
@@ -1558,7 +1639,7 @@ function render(){
   metroStop();updCamBtn=()=>{};if(cam&&!(v==='vw'&&cur&&cur.id===cam.songId))camClose();
   const k=v+tab+(cur&&cur.id),y=k===pv?scrollY:0;pv=k;
   if(v==='vw')wakePing();else wakeOff();
-  A.textContent='';({list,vw:view,ed:edit,set:settings,gal:gallery,wel:welcome,onb:onboard,load:loading,fadd:folderAdd})[v]();scrollTo(0,y);syncHist();
+  A.textContent='';({list,vw:view,ed:edit,set:settings,gal:gallery,wel:welcome,onb:onboard,load:loading,fadd:folderAdd,dev:devPage})[v]();scrollTo(0,y);syncHist();
   if(v==='ed'&&tab==='c'&&pk){const e=A.querySelector('.cl.sel,.cc.on');
     if(e){const r=e.getBoundingClientRect(),lim=innerHeight-290;if(r.bottom>lim)scrollBy(0,r.bottom-lim+16);else if(r.top<90)scrollBy(0,r.top-110)}}
 }
