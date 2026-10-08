@@ -204,7 +204,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 .fab{position:fixed;left:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;border:0;background:var(--ch);color:var(--bg);box-shadow:0 6px 18px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:8}
 .fabd{position:fixed;left:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:8}.fabd .fab{position:static}.fabd .mn{bottom:calc(100% + 8px)}
 .f.bad{border-color:#dc2626;box-shadow:0 0 0 1px #dc2626}
-.psd{display:flex;flex-direction:column;gap:8px}.psd textarea{min-height:200px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;white-space:pre;overflow-x:auto}.perr{color:#dc2626;margin:0;font-size:.9rem}
+.psd{display:flex;flex-direction:column;gap:8px;max-height:calc(100dvh - 32px)}.psd h3{margin:0}.psd .f{margin:0}.psd .dlgb{margin-top:4px}.psd textarea{flex:1;min-height:min(46vh,420px);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;white-space:pre;overflow-x:auto}.psd textarea::placeholder{white-space:pre-line;font-family:system-ui,'Segoe UI',Arial,sans-serif}.psd textarea:placeholder-shown{direction:rtl}.perr{color:#dc2626;margin:0;font-size:.9rem}
 .fab svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round}
 .fab:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
 .hrt{color:var(--mut)}.hrt.on{color:#e11d48;border-color:#e11d48}
@@ -1667,7 +1667,7 @@ function pasteSong(fid){
   const st=el('select','f');st.setAttribute('aria-label','מאיזה אתר הועתק השיר');
   [['','מאיזה אתר הועתק השיר?'],['nagnu','נגנו'],['negina','נגינה'],['ug','Ultimate Guitar'],['cifra','Cifra Club'],['auto','אחר (זיהוי אוטומטי)']].forEach(([k,x],i)=>{const o=el('option','',x);o.value=k;if(!i){o.disabled=true;o.selected=true}st.append(o)});
   st.onchange=()=>{st.classList.remove('bad');er.hidden=true};
-  const ta=el('textarea','f');ta.rows=10;ta.dir='auto';ta.placeholder='הדבק כאן את השיר, עם שורות האקורדים מעל המילים';ta.setAttribute('aria-label','השיר עם האקורדים');
+  const ta=el('textarea','f');ta.rows=10;ta.dir='auto';ta.placeholder='הדבק כאן את השיר,\nעם שורות האקורדים מעל המילים';ta.setAttribute('aria-label','השיר עם האקורדים');
   const er=el('p','perr');er.hidden=true;
   [ti,ar,ta].forEach(x=>x.oninput=()=>{if(x.value.trim())x.classList.remove('bad');er.hidden=true});
   const done=()=>{w.remove();document.removeEventListener('keydown',kd,true);dlgClose=null};
