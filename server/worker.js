@@ -27,7 +27,7 @@ function counters(o, maxKeys) {
 function cors(req) {
   const o = req.headers.get('Origin');
   return {
-    'Access-Control-Allow-Origin': ORIGINS.includes(o) ? o : ORIGINS[0],
+    'Access-Control-Allow-Origin': ORIGINS.includes(o) || /^https:\/\/([a-z0-9-]+\.)?akordi[a-z0-9-]*\.pages\.dev$/.test(o || '') ? o : ORIGINS[0],
     'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type,Authorization',
     'Access-Control-Max-Age': '86400',
