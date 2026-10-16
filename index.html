@@ -270,7 +270,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 // מספר הגרסה מתעדכן אוטומטית בכל עדכון (git pre-commit)
 // BETA: סביבת הבדיקות (akordi-dev.pages.dev) – שרת נפרד, קובץ נפרד ב-Drive ופרויקט Google נפרד, כך ששום בדיקה לא נוגעת באפליקציה האמיתית
 const BETA=!!window.BETA,LOGO=BETA?'icon-beta.svg':'icon.svg';
-const APPV='0.74b6';
+const APPV='0.74b7';
 const verName=x=>{x=x||'';let m=x.match(/^(\d+\.\d+)b(\d+)$/);if(m)return 'Akordi '+m[1]+' beta '+m[2];return /^\d+\.\d+$/.test(x)?'Akordi '+x:x?'beta':'–'};
 let favOnly=false,galSong=null,incoming=null,S=[],v='list',cur=null,tab='l',pk=null,t=0,fs=18,sp=3,timer=null,tbc=false,pv='',ins='g',onChord=null,closeP=null;
 try{S=JSON.parse(localStorage.getItem('chords_songs')||'[]')}catch(e){}
@@ -1267,10 +1267,12 @@ function accountSection(){
 // ===== עמוד מפתח – גלוי רק לבעל האפליקציה. הכפתור מוצג לפי גיבוב של המייל (המייל עצמו לא מופיע בקוד);
 // נתוני הסטטיסטיקה בשרת יהיו מוגנים בבדיקה מול Google, כך שהסתרת הכפתור היא לא ההגנה היחידה =====
 const DEVH='c5dc86eb30a74fd8597e15c6e48d02d88052cd44f0ce9e5e4467e7a37354dd0a';
-let devOk=false,devTab='info',devForce=null;
+let devOk=false,devTab='info',devForce=null,pendDev=false;
 async function chkDev(){let ok=false;
   try{if(acct&&acct.email&&window.crypto&&crypto.subtle){const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(acct.email.trim().toLowerCase()));ok=[...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,'0')).join('')===DEVH}}catch(e){}
-  if(ok!==devOk){devOk=ok;if(v==='set'||v==='dev')render()}
+  if(ok&&pendDev&&v==='set'){pendDev=false;devOk=ok;v='dev';render()}
+  else if(ok!==devOk){devOk=ok;if(v==='set'||v==='dev')render()}
+  if(!ok)pendDev=false;
   // מכשיר שזוהה כשלך ועוד לא דווח לשרת – שולח מיד, כדי שלא ייספר בסטטיסטיקה
   if(ok&&!lsG('chords_mesent',false)&&!noPing())setTimeout(()=>dailyPing(true),1500)}
 const ltrI=x=>'\u2066'+x+'\u2069',fmtB=n=>n==null?'–':ltrI(n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(1)+' MB');
@@ -1954,7 +1956,7 @@ function render(){
   metroStop();updCamBtn=()=>{};if(cam&&!(v==='vw'&&cur&&cur.id===cam.songId))camClose();
   const k=v+tab+(cur&&cur.id),y=k===pv?scrollY:0;pv=k;
   if(v==='vw')wakePing();else wakeOff();
-  A.textContent='';({list,vw:view,ed:edit,set:settings,gal:gallery,wel:welcome,onb:onboard,load:loading,fadd:folderAdd,dev:devPage})[v]();scrollTo(0,y);syncHist();
+  A.textContent='';({list,vw:view,ed:edit,set:settings,gal:gallery,wel:welcome,onb:onboard,load:loading,fadd:folderAdd,dev:devPage})[v]();scrollTo(0,y);syncHist();saveNav();
   if(v==='ed'&&tab==='c'&&pk){const e=A.querySelector('.cl.sel,.cc.on');
     if(e){const r=e.getBoundingClientRect(),lim=innerHeight-290;if(r.bottom>lim)scrollBy(0,r.bottom-lim+16);else if(r.top<90)scrollBy(0,r.top-110)}}
 }
@@ -1976,6 +1978,21 @@ document.addEventListener('wheel',e=>{if(v==='vw'&&e.ctrlKey){e.preventDefault()
 /* phone back button */
 let armed=false,ignorePop=false,edSnap=null,edObj=null;
 const edState=()=>{const c=cur;return JSON.stringify({a:[c.title,c.artist,c.link,c.cp,c.bpm,c.priv,c.dir,c.note],t:c.raw!=null?c.raw:c.lines.filter(l=>l.ty!=='c').map(l=>l.t).join('\n'),c:c.lines.map(l=>l.ty==='c'?[l.x,l.lab]:l.c)})};
+// רענון הדף: חוזרים לאותו מסך (נשמר רק בלשונית הזו, כך שפתיחה חדשה של האפליקציה מתחילה במסך הראשי)
+let navY=0;
+function saveNav(){try{if(!['list','vw','ed','set','gal','dev'].includes(v)||(cur&&cur===incoming))return;
+  sessionStorage.setItem('chords_nav',JSON.stringify({v,cid:cur&&cur.id,t,fSel,galSong,devTab,y:Math.round(scrollY)}))}catch(e){}}
+addEventListener('pagehide',saveNav);
+function loadNav(){let n=null;try{n=JSON.parse(sessionStorage.getItem('chords_nav')||'null')}catch(e){}
+  if(!n||typeof n!=='object')return;
+  if(n.fSel!=null&&FOL.some(f=>f.id===n.fSel))fSel=n.fSel;
+  const sg=n.cid!=null?S.find(x=>x.id===n.cid):null;
+  if((n.v==='vw'||n.v==='ed')&&sg){cur=sg;t=typeof n.t==='number'?n.t:(sg.tp||0);v='vw'}
+  else if(n.v==='set')v='set';
+  else if(n.v==='dev'){if(typeof n.devTab==='string')devTab=n.devTab;pendDev=true;v='set'}
+  else if(n.v==='gal'){galSong=n.galSong!=null&&S.some(x=>x.id===n.galSong)?n.galSong:null;v='gal'}
+  if(v===n.v||(n.v==='ed'&&v==='vw'))navY=+n.y||0;
+  try{if(history.state&&history.state.chords&&v!=='list')armed=true}catch(e){}}
 function syncHist(){
   if(v==='ed'&&edObj!==cur){edObj=cur;edSnap=edState()}
   if(v!=='ed')edObj=null;
@@ -2018,6 +2035,7 @@ if(oauthBack){
   if(oauthBack.first){v='load';onFirstLogin()}
   else{const s2=oauthBack.cid!=null?S.find(x=>x.id===oauthBack.cid):null;if(s2){cur=s2;t=s2.tp||0;v='vw'}else if(oauthBack.v==='set')v='set';syncNow()}
 }else if(oauthErr){setTimeout(()=>toast('ההתחברות בוטלה'),300);if(pend&&!welSeen())v='wel'}
+if(!oauthBack&&!oauthErr&&!/^#s=/.test(location.hash))loadNav();
 if(!oauthBack&&!/^#s=/.test(location.hash)&&!acct&&!welSeen())v='wel';
 if(acct){if(!isIOS)loadGIS().catch(()=>{});if(!tok)loadTok();if(!tokOk())setCloud('need');else if(!oauthBack)setTimeout(syncNow,300)}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&acct&&tokOk()&&!syncing&&Date.now()-lastSync>30000)syncNow()});
@@ -2174,6 +2192,7 @@ if('serviceWorker' in navigator&&location.protocol!=='file:'){
 }
 
 render();
+if(navY){const y0=navY;navY=0;requestAnimationFrame(()=>scrollTo(0,y0));setTimeout(()=>{if(scrollY<5)scrollTo(0,y0)},300)}
 (async()=>{try{const sh=await readLink();if(sh){incoming=sh;cur=sh;t=0;v='vw';try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}render()}}catch(e){}})();
 </script>
 </body>
