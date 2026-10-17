@@ -100,19 +100,24 @@ textarea.f{min-height:300px;line-height:1.6}
 .cb,.tb{position:fixed;inset-inline:0;bottom:0;}
 .cb{bottom:var(--kb,0px)}
 .cb,.tb{position:fixed;inset-inline:0;background:var(--cd);border-top:1px solid var(--bd);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));z-index:9}
-.cb{height:calc(236px + env(safe-area-inset-bottom,0px));box-sizing:border-box;display:flex;flex-direction:column;gap:2px}
-.cb.m1{overflow-y:auto}
-.cb.m2{overflow:visible;justify-content:space-evenly}
+.cb{box-sizing:border-box;display:flex;flex-direction:column;gap:6px;max-height:70vh;overflow-y:auto}
 .phd{font-size:.75rem;color:var(--mut);text-align:center;margin-top:2px}
 .cb .rw{margin:3px 0}
 .rw.fit{flex-wrap:nowrap}.rw.fit>*{flex:1 1 0;min-width:0}.rw.fit .b{padding-inline:2px;width:100%}
-.flw{position:relative;display:flex}
-.fl{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:4px;display:flex;flex-direction:column;gap:3px;max-height:min(45vh,300px);overflow-y:auto;z-index:12;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:5.5em}
-.fi{direction:ltr;text-align:center}
-.fl.g3{display:grid;grid-template-columns:repeat(3,auto);min-width:0;max-height:min(60vh,380px)}
-.flw:last-child .fl{left:auto;right:0;transform:none}.flw:first-child .fl{left:0;transform:none}
 .sar[hidden]{display:none}
 .pside{flex:0 0 88px;display:flex;gap:6px;align-items:center}.pside.r{justify-content:flex-end}
+.pv.pv0{color:var(--mut);font-weight:400;font-size:1rem}
+.pus{flex-wrap:nowrap;overflow-x:auto;justify-content:center;scrollbar-width:none}
+.whs{display:grid;grid-template-columns:.8fr 1.4fr 1fr;gap:6px;direction:ltr}
+.wcol{display:flex;flex-direction:column;gap:2px;min-width:0}
+.wlb{font-size:.72rem;color:var(--mut);text-align:center}
+.wwrap{position:relative;border:1px solid var(--bd);border-radius:10px;overflow:hidden}
+.wwrap::before{content:"";position:absolute;inset:28px 0 auto;height:28px;background:var(--hl);border-block:1px solid var(--ch);pointer-events:none}
+.wh{position:relative;height:84px;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;padding-block:28px;box-sizing:border-box;overscroll-behavior:contain}
+.wh::-webkit-scrollbar{display:none}.wh:focus-visible{outline:2px solid var(--ch);outline-offset:-2px}
+.wi{height:28px;display:flex;align-items:center;justify-content:center;scroll-snap-align:center;cursor:pointer;color:var(--mut);direction:ltr}
+.wi.cur{color:var(--ch);font-weight:700}
+.wfd{position:absolute;inset:0;pointer-events:none;background:linear-gradient(var(--cd),transparent 35%,transparent 65%,var(--cd))}
 .hdr{padding:0 0 4px}
 .icr{display:flex;gap:6px;align-items:center;min-width:0}
 .stk{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);padding:10px 0 8px}
@@ -271,7 +276,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 // מספר הגרסה מתעדכן אוטומטית בכל עדכון (git pre-commit)
 // BETA: סביבת הבדיקות (akordi-dev.pages.dev) – שרת נפרד, קובץ נפרד ב-Drive ופרויקט Google נפרד, כך ששום בדיקה לא נוגעת באפליקציה האמיתית
 const BETA=!!window.BETA,LOGO=BETA?'icon-beta.svg':'icon.svg';
-const APPV='0.75b10';
+const APPV='0.75b11';
 const verName=x=>{x=x||'';let m=x.match(/^(\d+\.\d+)b(\d+)$/);if(m)return 'Akordi '+m[1]+' beta '+m[2];return /^\d+\.\d+$/.test(x)?'Akordi '+x:x?'beta':'–'};
 let favOnly=false,galSong=null,incoming=null,S=[],v='list',cur=null,tab='l',pk=null,t=0,fs=18,sp=3,timer=null,tbc=false,pv='',ins='g',onChord=null,closeP=null;
 try{S=JSON.parse(localStorage.getItem('chords_songs')||'[]')}catch(e){}
@@ -461,7 +466,7 @@ function rl(l,dir,edit,li){
     c.dataset.k=i;
     if(a.length){const h=el('span','ch');a.forEach((z,n)=>{const q=el('span','cd',tr(z));if(edit)drag(q,li,i,n,z);else q.onclick=e=>{e.stopPropagation();onChord&&onChord(tr(z),q)};h.append(q)});c.append(h)}
     c.append(el('span','tx',x));
-    if(edit){c.onclick=()=>{if(Date.now()<noClick)return;const a0=lc(l,i);pk=(i===-1&&a0.length)?Object.assign({li,k:i,ei:0},pp(a0[0])):{li,k:i};render()};if(pk&&pk.li===li&&pk.k===i&&pk.j==null)c.classList.add('sel')}
+    if(edit){c.onclick=()=>{if(Date.now()<noClick)return;const a0=lc(l,i);pk=(a0.length&&i!==cs.length)?Object.assign({li,k:i,ei:0},pp(a0[0])):{li,k:i};render()};if(pk&&pk.li===li&&pk.k===i&&pk.j==null)c.classList.add('sel')}
     return c};
   const C=cs.map((ch,i)=>cell(i,ch===' '?'\u00a0':ch));
   const st=(edit||lc(l,-1).length)?cell(-1,'\u00a0','st'):null;if(st)st.dir=dir;const en=(edit||lc(l,cs.length).length)?cell(cs.length,'\u00a0','en'):null;
@@ -1831,78 +1836,70 @@ function settings(){
 }
 
 const TRI='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>';
+// סוגי אקורדים לפי שכיחות ('' = מז'ור)
+const TYP=['','m','7','m7','maj7','sus4','sus2','add9','6','m6','9','m9','dim','dim7','aug','7sus4','maj9','6/9','11','13','5','m11','madd9','mmaj7','m7b5','aug7','7b5','7b9','7#9'];
+const BAS=['C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#','Bb','B'];
+// גלגל בחירה: 3 שורות גלויות, לחיצה על שורה בוחרת אותה, גלילה בוחרת את האמצעית
+function wheel(lab,items,val,show,pick){const H=28,col=el('div','wcol'),w=el('div','wwrap'),sc=el('div','wh');
+  sc.tabIndex=0;sc.setAttribute('role','listbox');sc.setAttribute('aria-label',lab);
+  let last=Math.max(0,items.indexOf(val)),tm;
+  items.forEach((x,i)=>{const it=el('div','wi'+(i===last?' cur':''),show(x));it.setAttribute('role','option');it.onclick=()=>{if(i!==last){last=i;pick(items[i])}else sc.scrollTo({top:i*H,behavior:'smooth'})};sc.append(it)});
+  sc.onkeydown=e=>{const d=e.key==='ArrowDown'?1:e.key==='ArrowUp'?-1:0;if(!d)return;e.preventDefault();const i=last+d;if(i>=0&&i<items.length){last=i;pick(items[i])}};
+  w.append(sc,el('div','wfd'));col.append(el('span','wlb',lab),w);
+  requestAnimationFrame(()=>{sc.scrollTop=last*H});
+  sc.onscroll=()=>{clearTimeout(tm);tm=setTimeout(()=>{const i=Math.min(items.length-1,Math.max(0,Math.round(sc.scrollTop/H)));if(i!==last){last=i;pick(items[i])}},90)};
+  return col}
+// בורר האקורדים: האקורד נכנס מעל האות מיד ומשתנה בזמן אמת, בלי מסך שני ובלי אישור
 function picker(){
-  const s=cur,l=s.lines[pk.li],isC=pk.k==='x',b=el('div','cb');
-  const editing=(isC?pk.j:pk.ei)!=null,rw=c=>el('div','rw ltr'+(c?' '+c:''));
-  const put=c=>{c=c.trim();if(!c)return;
-    if(isC){editing?l.x[pk.j]=c:l.x.push(c)}
-    else{const a=lc(l,pk.k);editing?a[pk.ei]=c:a.push(c);l.c[pk.k]=a.join(' ')}
-    pk=null;render()};
+  const s=cur,l=s.lines[pk.li],isC=pk.k==='x',b=el('div','cb'),editing=()=>(isC?pk.j:pk.ei)!=null;
+  const nm=()=>pk.root?pk.root+(pk.acc||'')+(pk.typ||'')+(pk.bass?'/'+pk.bass:''):(pk.cust||'');
+  const put=c=>{c=(c||'').trim();if(!c)return;
+    if(isC){editing()?l.x[pk.j]=c:(l.x.push(c),pk.j=l.x.length-1)}
+    else{const a=lc(l,pk.k);editing()?a[pk.ei]=c:(a.push(c),pk.ei=a.length-1);l.c[pk.k]=a.join(' ')}
+    render()};
+  const set=o=>{Object.assign(pk,o);if(pk.root){pk.cust='';pk.cm=false}put(nm())};
   const del=()=>{
     if(isC)l.x.splice(pk.j,1);
     else{const a=lc(l,pk.k);a.splice(pk.ei,1);a.length?l.c[pk.k]=a.join(' '):delete l.c[pk.k]}
     pk=null;render()};
-  const hl=x=>el('div','phd',x);
-  if(!pk.root&&!pk.cust){
-    b.classList.add('m1');
-    if(!isC&&!editing){const a=lc(l,pk.k);if(a.length){const r=rw();
-      a.forEach((c,i)=>{r.append(btn(c,()=>{Object.assign(pk,pp(c));pk.ei=i;render()},'b pk','ערוך '+c),btn('✕',()=>{pk.ei=i;del()},'b','מחק '+c))});
-      b.append(hl('במקום הזה'),r)}}
-    const cnt={};
-    s.lines.forEach(x=>(x.ty==='c'?x.x:Object.values(x.c).flatMap(z=>z.split(' '))).filter(Boolean).forEach(c=>{cnt[c]=(cnt[c]||0)+1}));
-    const used=Object.keys(cnt).sort((x,y)=>cnt[y]-cnt[x]).slice(0,5);
-    if(used.length){const r=rw();used.forEach(c=>r.append(btn(c,()=>put(c),'b pk us')));b.append(hl('אקורדים בשיר'),r,el('hr','sep'))}
-    const r=rw('fit');
-    ['C','D','E','F','G','A','B'].forEach(x=>r.append(btn(x,()=>{pk.root=x;pk.acc='';pk.typ='';pk.bass='';pk.cust='';render()},'b pk')));
-    b.append(hl('אקורד חדש'),r);
+  const mvk=d=>{const st=s.dir==='rtl'?-d:d,k2=pk.k+st;if(k2<-1||k2>chars(l.t).length||(k2===-1&&lc(l,-1).length))return;
+    const c=nm(),a=lc(l,pk.k);a.splice(pk.ei,1);a.length?l.c[pk.k]=a.join(' '):delete l.c[pk.k];
+    const b2=lc(l,k2);b2.push(c);l.c[k2]=b2.join(' ');pk.k=k2;pk.ei=b2.length-1;render()};
+  // שורה עליונה: סיום ומחיקה משמאל, האקורד המלא באמצע, הקלדה חופשית מימין
+  const r1=el('div','pvr'),L=el('div','pside'),M=el('div','pmid'),R=el('div','pside r');
+  L.append(ibt('ok',()=>{pk=null;render()},'b pr ic','סיום'));
+  if(editing())L.append(ibt('trash',del,'b ic','מחק אקורד'));
+  const mv=!isC&&editing();
+  if(mv)M.append(btn('◀',()=>mvk(-1),'b','הזז אות שמאלה'));
+  M.append(el('div','pv'+(nm()?'':' pv0'),nm()||'בחר תו'));
+  if(mv)M.append(btn('▶',()=>mvk(1),'b','הזז אות ימינה'));
+  R.append(btn('✎',()=>{pk.cm=!pk.cm;render()},'b'+(pk.cm?' on':''),'הקלדה חופשית'));
+  r1.append(L,M,R);b.append(r1);
+  // האקורדים שכבר בשיר (5 הנפוצים)
+  const cnt={};
+  s.lines.forEach(x=>(x.ty==='c'?x.x:Object.values(x.c).flatMap(z=>z.split(' '))).filter(Boolean).forEach(c=>{cnt[c]=(cnt[c]||0)+1}));
+  const used=Object.keys(cnt).sort((x,y)=>cnt[y]-cnt[x]).slice(0,5);
+  if(used.length){const r=el('div','rw ltr pus');used.forEach(c=>r.append(btn(c,()=>{pk.cm=false;set(Object.assign({root:'',acc:'',typ:'',bass:'',cust:''},pp(c)))},'b pk us'+(nm()===c?' on':''))));b.append(r)}
+  if(pk.cm||(!pk.root&&pk.cust)){
+    const inp=el('input');inp.placeholder='אקורד';inp.setAttribute('aria-label','אקורד');inp.value=nm();inp.dir='ltr';
+    inp.onkeydown=e=>{if(e.key==='Enter'){const c=inp.value.trim();if(!c)return;pk.cm=false;Object.assign(pk,{root:'',acc:'',typ:'',bass:'',cust:''},pp(c));put(c)}};
+    const w=el('div','cu');w.append(inp,btn('הכנס',()=>inp.onkeydown({key:'Enter'}),'b pr'));setTimeout(()=>inp.focus(),0);b.append(w);
   }else{
-    b.classList.add('m2');
-    const custom=pk.cm||!pk.root,tail=()=>pk.bass?'/'+pk.bass:'';
-    const inp=el('input');inp.placeholder=pk.root?'סיומת: m9, 7sus4':'אקורד';inp.setAttribute('aria-label','אקורד');inp.value=pk.root?pk.typ:pk.cust;
-    const nmv=()=>custom?(pk.root?pk.root+pk.acc+inp.value.trim()+tail():inp.value.trim()):pk.root+pk.acc+pk.typ+tail();
-    const nameEl=el('div','pv',nmv());
-    inp.oninput=()=>{nameEl.textContent=nmv()};
-    inp.onkeydown=e=>{if(e.key==='Enter')put(nmv())};
-    const mvk=d=>{const st=s.dir==='rtl'?-d:d,k2=pk.k+st;if(k2<-1||k2>chars(l.t).length||(k2===-1&&lc(l,-1).length))return;
-      if(custom&&pk.root)pk.typ=inp.value.trim();
-      const c=nmv(),a=lc(l,pk.k);a.splice(pk.ei,1);a.length?l.c[pk.k]=a.join(' '):delete l.c[pk.k];
-      const b2=lc(l,k2);b2.push(c);l.c[k2]=b2.join(' ');pk.k=k2;pk.ei=b2.length-1;render()};
-    const r1=el('div','pvr'),L=el('div','pside'),M=el('div','pmid'),R=el('div','pside r');
-    if(editing)L.append(ibt('trash',del,'b ic','מחק אקורד'));
-    const mv=!isC&&editing&&pk.root;
-    if(mv)M.append(btn('◀',()=>mvk(-1),'b','הזז אות שמאלה'));
-    M.append(nameEl);
-    if(mv)M.append(btn('▶',()=>mvk(1),'b','הזז אות ימינה'));
-    R.append(ibt('back',()=>{if(pk.cm)pk.cm=false;else{pk.root=null;pk.cust=''}pk.bo=pk.oo=false;render()},'b ic','חזרה'),
-      ibt('ok',()=>put(nmv()),'b pr ic',editing?'שמור':'הוסף'));
-    r1.append(L,M,R);
-    b.append(r1);
-    const cu=()=>{const w=el('div','cu');w.append(inp);setTimeout(()=>inp.focus(),0);return w};
-    if(!pk.root){b.append(cu())}
-    else{
-      const drop=(label,on,key,items)=>{
-        const w=el('div','flw');
-        w.append(btn(label+(pk[key]?' ▴':' ▾'),()=>{pk[key]=!pk[key];if(pk[key])pk[key==='bo'?'oo':'bo']=false;render()},'b flb'+(on?' on':'')));
-        if(pk[key]){const Ls=el('div','fl'+(items.length>16?' g3':''));items.forEach(([x,act,f])=>Ls.append(btn(x,()=>{pk[key]=false;f()},'b fi'+(act?' on':''))));w.append(Ls)}
-        return w};
-      const r2=rw('fit');
-      r2.append(btn('♯',()=>{pk.acc=pk.acc==='#'?'':'#';render()},'b'+(pk.acc==='#'?' on':''),'דיאז'),
-        btn('♭',()=>{pk.acc=pk.acc==='b'?'':'b';render()},'b'+(pk.acc==='b'?' on':''),'במול'),
-        drop('בס'+(pk.bass?' '+pk.bass:''),!!pk.bass,'bo',[['ללא',!pk.bass,()=>{pk.bass='';render()}]].concat(N.map(x=>[x,pk.bass===x,()=>{pk.bass=x;render()}]))),
-        btn('✎',()=>{pk.cm=!pk.cm;pk.bo=pk.oo=false;render()},'b'+(pk.cm?' on':''),'הקלדה חופשית'));
-      b.append(r2);
-      if(custom)b.append(cu());
-      else{
-        const MAIN=['','m','7','m7'],OT=['maj7','6','add9','sus4','sus2','7sus4','9','maj9','6/9','11','13','5','m6','m9','m11','madd9','mmaj7','m7b5','dim','dim7','aug','aug7','7b5','7b9','7#9'];
-        if(!MAIN.includes(pk.typ)&&!OT.includes(pk.typ))OT.push(pk.typ);
-        const r3=rw('fit'),nm=pk.root+pk.acc;
-        MAIN.forEach(x=>r3.append(btn(nm+x,()=>{pk.typ=x;render()},'b pk'+(pk.typ===x?' on':''))));
-        r3.append(drop('אחר',!MAIN.includes(pk.typ),'oo',OT.map(x=>[nm+x,pk.typ===x,()=>{pk.typ=x;render()}])));
-        b.append(r3);
-      }
-    }
+    // שורת תווים: לחיצה שמה את האקורד
+    const r=el('div','rw ltr fit');
+    ['C','D','E','F','G','A','B'].forEach(x=>r.append(btn(x,()=>set({root:x}),'b pk'+(pk.root===x?' on':''))));
+    b.append(r);
+    // גלגלים: דיאז/במול, סוג, בס. שינוי לפני שנבחר תו נשמר ונכנס עם התו
+    const ty=TYP.includes(pk.typ||'')?TYP:TYP.concat([pk.typ]),bs=BAS.includes(pk.bass||'')||!pk.bass?BAS:BAS.concat([pk.bass]);
+    const chg=o=>{Object.assign(pk,o);pk.root?set({}):render()};
+    const ws=el('div','whs');
+    ws.append(wheel('♯ / ♭',['b','','#'],pk.acc||'',x=>x==='#'?'♯':x==='b'?'♭':'—',x=>chg({acc:x})),
+      wheel('סוג',ty,pk.typ||'',x=>x||'Major',x=>chg({typ:x})),
+      wheel('בס',[''].concat(bs),pk.bass||'',x=>x?'/'+x:'—',x=>chg({bass:x})));
+    b.append(ws);
   }
   const spc=el('div');spc.style.height='calc(260px + env(safe-area-inset-bottom,0px))';A.append(spc,b);
+  requestAnimationFrame(()=>{spc.style.height=(b.offsetHeight+16)+'px'});
 }
 
 function exitEdit(){
@@ -1980,7 +1977,6 @@ function render(){
 }
 document.addEventListener('click',e=>{
   if(v!=='ed'||tab!=='c'||!pk)return;
-  if((pk.bo||pk.oo)&&!e.target.closest('.flw')){pk.bo=pk.oo=false;render();return}
   if(!e.target.closest('.cb,.cl,.cd,.cc,.gap,.b')){pk=null;render()}
 });
 let pinch=null,wt=0;
