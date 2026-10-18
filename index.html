@@ -1450,6 +1450,8 @@ function showMsg(){const m=lsG('chords_msgpend',null);if(!m||v!=='list'||dlgClos
   lsS('chords_msgseen',m.mid);try{localStorage.removeItem('chords_msgpend')}catch(e){}
   if(m.until&&m.until<Date.now())return;
   dlg({title:'הודעה מאקורדי',text:m.text,ok:'סגור',noCancel:true})}
+// מעבר לכתובת החדשה: כל פתיחה שם נספרת, כדי לראות בעמוד המפתח כמה משתמשים כבר עברו
+if(!mvIn&&location.href.startsWith(NEWURL))track('newaddr');
 setTimeout(()=>dailyPing(),2500);
 // בדיקת הודעה חדשה בכל פתיחה וחזרה לאפליקציה (לכל היותר פעם בחצי שעה). לא נשלח שום מידע – רק שאלה "יש הודעה?"
 let msgChk=false;
@@ -1492,7 +1494,7 @@ async function adm(path,body){if(!tokOk())throw new Error('auth');
 function devNeedTok(){const c=el('div','dvc dve');c.append(el('p','','כדי לקרוא נתונים מהשרת צריך התחברות פעילה לגוגל.'),btn('התחבר',()=>{signIn(false);afterTok=()=>{syncNow();if(v==='dev')render()}},'b pr'));A.append(c)}
 function devErr(e,retry){const c=el('div','dvc dve');c.append(el('p','',e&&e.message==='forbidden'?'השרת לא זיהה את החשבון כבעל האפליקציה. בדוק את הסוד OWNER_EMAIL ב-Cloudflare.':'לא הצלחתי לקרוא מהשרת. בדוק את החיבור לאינטרנט.'));if(e&&(e.info||e.message!=='forbidden')){const dt=el('code','',e.info||String(e.message||e));dt.dir='ltr';c.append(dt)}c.append(btn('נסה שוב',retry,'b'));A.append(c)}
 let devSt=null,devFbL=null;
-const FEAT={help:'מדריך מהיר',imp_nagnu:'ייבוא מנגנו',imp_ug:'ייבוא מ-UG',imp_negina:'ייבוא מנגינה',imp_cifra:'ייבוא מ-Cifra Club',imp_auto:'ייבוא מטקסט אחר',imp_file:'ייבוא מקובץ',link_add:'הוספת שיר מקישור',new:'שיר חדש',share:'שיתוף שיר',share_fold:'שליחת תיקייה',pdf:'PDF של שיר',pdf_book:'שירון PDF',tr:'טרנספוזיציה',simp:'פישוט אקורדים',scroll:'גלילה אוטומטית',metro:'מטרונום',cam:'מצלמה'};
+const FEAT={newaddr:'פתיחה בכתובת החדשה',moved:'העברת שירים מהכתובת הישנה',help:'מדריך מהיר',imp_nagnu:'ייבוא מנגנו',imp_ug:'ייבוא מ-UG',imp_negina:'ייבוא מנגינה',imp_cifra:'ייבוא מ-Cifra Club',imp_auto:'ייבוא מטקסט אחר',imp_file:'ייבוא מקובץ',link_add:'הוספת שיר מקישור',new:'שיר חדש',share:'שיתוף שיר',share_fold:'שליחת תיקייה',pdf:'PDF של שיר',pdf_book:'שירון PDF',tr:'טרנספוזיציה',simp:'פישוט אקורדים',scroll:'גלילה אוטומטית',metro:'מטרונום',cam:'מצלמה'};
 const BNN={inst:'באנר התקנה',login:'באנר התחברות',help:'באנר מדריך',upd:'באנר גרסה חדשה'},INSN={p:'פסנתר',g:'גיטרה',u:'יוקלילי'};
 let regN=null;try{regN=new Intl.DisplayNames(['he'],{type:'region'})}catch(e){}
 const pct=(a,b)=>b?Math.round(100*a/b)+'%':'–';
@@ -1538,6 +1540,9 @@ function devStats(){
   A.append(el('h2','sh','משתמשים ('+RL+')'),dvTiles([[rg2.n||0,'פעילים',sp(rg2.n,rg2.r)],[tt.n||0,'כל המשתמשים','רשומים '+nP(tt.r||0,tt.n)+'\nלא רשומים '+((tt.n||0)-(tt.r||0))],
       [tt.r?(+(tt.devR/tt.r).toFixed(1)):'–','מכשירים למשתמש רשום',tt.r?(tt.devR||0)+' מכשירים של '+tt.r+' משתמשים':'עוד אין משתמשים רשומים']],'k3'),
     el('p','hint','משתמש רשום נספר פעם אחת בכל המכשירים שלו. משתמש לא רשום נספר לפי מכשיר.'+(d.me?'':' המכשירים שלך לא נכללים.')));
+  {const fe=k=>d.ev.find(r=>r.k===k)||{},na=fe('newaddr'),mv=fe('moved'),mb=(d.bn||{}).move||{};
+    A.append(el('h2','sh','מעבר לכתובת החדשה ('+RL+')'),dvTiles([[na.u||0,'פעילים בכתובת החדשה','מתוך '+(rg2.n||0)+' משתמשים פעילים'],[mv.u||0,'העבירו שירים',(mv.n||0)+' העברות'],[mb.s||0,'הצגות של מסך המעבר','לחצו "העבר" '+(mb.a||0)+' פעמים']],'k3'),
+      el('p','hint','"פעילים בכתובת החדשה" כולל גם משתמשים חדשים שהגיעו ישר לשם. מי שמחובר עם Google יכול לעבור גם בלי ללחוץ "העבר".'))}
   if(d.days!==1)A.append(el('h2','sh','משתמשים פעילים בכל יום'),dvBars(d.series,d),el('h2','sh','משתמשים חדשים בכל יום'),dvBars(d.newS,d));
   const r7=d.ret.d7||{},r30=d.ret.d30||{},rt=(r,days)=>r.n?[pct(r.r||0,r.n),'חזרו אחרי '+days,(r.r||0)+' מתוך '+r.n]:['–','חזרו אחרי '+days,'יופיע '+(days==='שבוע'?'שבוע':'חודש')+' אחרי המשתמשים הראשונים'];
   A.append(el('h2','sh','שימור משתמשים'),el('p','hint','מבין מי שהצטרף לפני יותר משבוע (או חודש) – כמה חזרו לאקורדי אחרי שבוע (או חודש).'),dvTiles([rt(r7,'שבוע'),rt(r30,'חודש')],'k2'));
@@ -2263,7 +2268,7 @@ async function moveIn(){
       mergeRemote({songs:js('chords_songs',[]),del:js('chords_del',{}),folders:{list:js('chords_folders',[]),upd:+ls.chords_fupd||0},prefs:{ins:ls.chords_ins,upd:+ls.chords_pupd||0}});
       sv();saveDel();
       Object.keys(ls).forEach(k=>{if(!/^chords_/.test(k)||MVSKIP.test(k)||MVMERGE.includes(k)||typeof ls[k]!=='string'||(k==='chords_acct'&&acct))return;try{localStorage.setItem(k,ls[k])}catch(e){}});
-      ok=true}
+      track('moved');ok=true}
   }catch(e){}
   try{sessionStorage.setItem('chords_mvok',ok?'1':'0');sessionStorage.removeItem('chords_nav');history.replaceState(null,'',location.pathname+location.search)}catch(e){}
   location.reload()}
