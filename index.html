@@ -73,7 +73,7 @@ textarea.f{min-height:300px;line-height:1.6}
 .ed .cd{cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;padding:3px 4px;margin:-3px -4px}
 .cl.dt{background:var(--hl);outline:2px solid var(--ch)}
 .pvr{display:flex;align-items:center;gap:8px;direction:ltr}
-.pmid{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:10px}
+.pmid{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px}
 .pl2{display:flex;gap:6px;align-items:center}
 .rw.ltr{direction:ltr}
 .sl{min-width:1.4em}
@@ -100,18 +100,25 @@ textarea.f{min-height:300px;line-height:1.6}
 .cb,.tb{position:fixed;inset-inline:0;bottom:0;}
 .cb{bottom:var(--kb,0px)}
 .cb,.tb{position:fixed;inset-inline:0;background:var(--cd);border-top:1px solid var(--bd);padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));z-index:9}
-.cb{height:calc(236px + env(safe-area-inset-bottom,0px));box-sizing:border-box;display:flex;flex-direction:column;gap:2px}
-.cb.m1{overflow-y:auto}
-.cb.m2{overflow:visible;justify-content:space-evenly}
+.cb{box-sizing:border-box;display:flex;flex-direction:column;gap:6px;max-height:70vh;overflow-y:auto}
 .phd{font-size:.75rem;color:var(--mut);text-align:center;margin-top:2px}
 .cb .rw{margin:3px 0}
 .rw.fit{flex-wrap:nowrap}.rw.fit>*{flex:1 1 0;min-width:0}.rw.fit .b{padding-inline:2px;width:100%}
-.flw{position:relative;display:flex}
-.fl{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:4px;display:flex;flex-direction:column;gap:3px;max-height:min(45vh,300px);overflow-y:auto;z-index:12;box-shadow:0 6px 24px rgba(0,0,0,.25);min-width:5.5em}
-.fi{direction:ltr;text-align:center}
-.flw:last-child .fl{left:auto;right:0;transform:none}.flw:first-child .fl{left:0;transform:none}
 .sar[hidden]{display:none}
-.pside{flex:0 0 88px;display:flex;gap:6px;align-items:center}.pside.r{justify-content:flex-end}
+.pside{flex:0 0 46px;display:flex;gap:6px;align-items:center}.pside.r{justify-content:flex-end}
+.pmid .pv{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pv.pvl{font-size:1.1rem}.pv.pvx{font-size:.95rem}.pmid .pa{padding-inline:7px;min-width:0}
+.pv.pv0{color:var(--mut);font-weight:400;font-size:1rem}
+.pus{flex-wrap:nowrap;overflow-x:auto;justify-content:center;scrollbar-width:none}
+.whs{display:grid;grid-template-columns:.8fr 1.4fr 1fr;gap:6px;direction:ltr}
+.wcol{display:flex;flex-direction:column;gap:2px;min-width:0}
+.wlb{font-size:.72rem;color:var(--mut);text-align:center}
+.wwrap{position:relative;border:1px solid var(--bd);border-radius:10px;overflow:hidden}
+.wwrap::before{content:"";position:absolute;inset:28px 0 auto;height:28px;background:var(--hl);border-block:1px solid var(--ch);pointer-events:none}
+.wh{position:relative;height:84px;overflow-y:auto;scroll-snap-type:y mandatory;scrollbar-width:none;padding-block:28px;box-sizing:border-box;overscroll-behavior:contain}
+.wh::-webkit-scrollbar{display:none}.wh:focus-visible{outline:2px solid var(--ch);outline-offset:-2px}
+.wi{height:28px;display:flex;align-items:center;justify-content:center;scroll-snap-align:center;cursor:pointer;color:var(--mut);direction:ltr}
+.wi.cur{color:var(--ch);font-weight:700}
+.wfd{position:absolute;inset:0;pointer-events:none;background:linear-gradient(var(--cd),transparent 35%,transparent 65%,var(--cd))}
 .hdr{padding:0 0 4px}
 .icr{display:flex;gap:6px;align-items:center;min-width:0}
 .stk{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);padding:10px 0 8px}
@@ -270,7 +277,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 // מספר הגרסה מתעדכן אוטומטית בכל עדכון (git pre-commit)
 // BETA: סביבת הבדיקות (akordi-dev.pages.dev) – שרת נפרד, קובץ נפרד ב-Drive ופרויקט Google נפרד, כך ששום בדיקה לא נוגעת באפליקציה האמיתית
 const BETA=!!window.BETA,LOGO=BETA?'icon-beta.svg':'icon.svg';
-const APPV='0.74';
+const APPV='0.75';
 const verName=x=>{x=x||'';let m=x.match(/^(\d+\.\d+)b(\d+)$/);if(m)return 'Akordi '+m[1]+' beta '+m[2];return /^\d+\.\d+$/.test(x)?'Akordi '+x:x?'beta':'–'};
 let favOnly=false,galSong=null,incoming=null,S=[],v='list',cur=null,tab='l',pk=null,t=0,fs=18,sp=3,timer=null,tbc=false,pv='',ins='g',onChord=null,closeP=null;
 try{S=JSON.parse(localStorage.getItem('chords_songs')||'[]')}catch(e){}
@@ -300,29 +307,45 @@ const trx=c=>{const k=sh0();return k?c.replace(/[A-G][#b]?/g,m=>N[(((N.indexOf(F
 const sesSimp={};let pdfSimp=null;
 const simpOn=()=>pdfSimp!=null?pdfSimp:(v!=='ed'&&!!cur&&!!sesSimp[cur.id]);
 const simpC=c=>{const m=c.match(/^([A-G][#b]?)(.*?)(?:\/[A-G][#b]?)?$/);if(!m)return c;const q=m[2];
-  if(/^(dim|°|o(?!\w))/.test(q))return m[1]+'dim';if(/^(aug|\+)/.test(q))return m[1]+'aug';
+  if(/^(dim|°|ø|o(?!\w))/.test(q))return m[1]+'dim';if(/^(aug|\+)/.test(q))return m[1]+'aug';
   return m[1]+(/^(m(?!aj)|min|-)/.test(q)?'m':'')};
 const tr=c=>{const r=trx(c);return simpOn()?simpC(r):r};
 const chars=s=>Array.from(s),detect=s=>/[\u0590-\u05FF]/.test(s)?'rtl':'ltr';
 const lc=(l,k)=>(l.c[k]||'').split(' ').filter(Boolean);
-const pp=c=>{const m=c.match(/^([A-G])([#b]?)([^/]*)(?:\/([A-G][#b]?))?$/);return m?{root:m[1],acc:m[2],typ:m[3],bass:m[4]||''}:{cust:c}};
+const pp=c=>{const m=c.match(/^([A-G])([#b]?)((?:[^/]|\/9)*)(?:\/([A-G][#b]?))?$/);return m?{root:m[1],acc:m[2],typ:m[3],bass:m[4]||''}:{cust:c}};
 
 /*CH_START*/
-const TY={'':[0,4,7],m:[0,3,7],'7':[0,4,7,10],m7:[0,3,7,10],maj7:[0,4,7,11],sus4:[0,5,7],sus2:[0,2,7],dim:[0,3,6],aug:[0,4,8],'6':[0,4,7,9],add9:[0,4,7,14]};
+const TY={'':[0,4,7],m:[0,3,7],'7':[0,4,7,10],m7:[0,3,7,10],maj7:[0,4,7,11],sus4:[0,5,7],sus2:[0,2,7],dim:[0,3,6],aug:[0,4,8],'6':[0,4,7,9],add9:[0,4,7,14],
+  '7sus4':[0,5,7,10],'9':[0,4,7,10,14],maj9:[0,4,7,11,14],'6/9':[0,4,7,9,14],'11':[0,7,10,14,17],'13':[0,4,7,10,14,21],'5':[0,7],
+  m6:[0,3,7,9],m9:[0,3,7,10,14],m11:[0,3,7,10,14,17],madd9:[0,3,7,14],mmaj7:[0,3,7,11],m7b5:[0,3,6,10],
+  dim7:[0,3,6,9],aug7:[0,4,8,10],'7b5':[0,4,6,10],'7b9':[0,4,7,10,13],'7#9':[0,4,7,10,15]};
+// כתיבים נפוצים אחרים של אותם אקורדים (ייבוא והקלדה חופשית) – לתרשים בלבד, השם בשיר לא משתנה
+const TAL={M7:'maj7',Maj7:'maj7',ma7:'maj7','Δ':'maj7','Δ7':'maj7',M9:'maj9',Maj9:'maj9',min:'m','-':'m',min7:'m7','-7':'m7',min6:'m6',min9:'m9',
+  'ø':'m7b5','ø7':'m7b5','m7-5':'m7b5','°':'dim',o:'dim','°7':'dim7',o7:'dim7','+':'aug','+7':'aug7','7#5':'aug7','7+5':'aug7','7+':'aug7',
+  '69':'6/9','6add9':'6/9',sus:'sus4','7sus':'7sus4',mM7:'mmaj7',minmaj7:'mmaj7','m/maj7':'mmaj7',add2:'add9','7-5':'7b5','7-9':'7b9','7+9':'7#9'};
+const tyOf=t=>{t=(t||'').replace(/[()]/g,'');const a=Object.hasOwn(TY,t)?t:Object.hasOwn(TAL,t)?TAL[t]:null;return a};
 const OPEN=[4,9,2,7,11,4],pcOf=n=>N.indexOf(FL[n]||n);
-const OP={'0|':[-1,3,2,0,1,0],'2|':[-1,-1,0,2,3,2],'7|':[3,2,0,0,0,3],'2|m':[-1,-1,0,2,3,1],'0|7':[-1,3,2,3,1,0],'2|7':[-1,-1,0,2,1,2],'7|7':[3,2,0,0,0,1],'11|7':[-1,2,1,2,0,2],'2|m7':[-1,-1,0,2,1,1],'0|maj7':[-1,3,2,0,0,0],'2|maj7':[-1,-1,0,2,2,2],'5|maj7':[-1,-1,3,2,1,0],'7|maj7':[3,2,0,0,0,2],'2|sus2':[-1,-1,0,2,3,0],'2|sus4':[-1,-1,0,2,3,3],'0|add9':[-1,3,2,0,3,0]};
-const TE={'':[0,2,2,1,0,0],m:[0,2,2,0,0,0],'7':[0,2,0,1,0,0],m7:[0,2,0,0,0,0],maj7:[0,2,1,1,0,0],sus4:[0,2,2,2,0,0]};
-const TA={'':[null,0,2,2,2,0],m:[null,0,2,2,1,0],'7':[null,0,2,0,2,0],m7:[null,0,2,0,1,0],maj7:[null,0,2,1,2,0],sus4:[null,0,2,2,3,0],sus2:[null,0,2,2,0,0],dim:[null,0,1,2,1,null],aug:[null,0,3,2,2,1],'6':[null,0,2,2,2,2],add9:[null,0,2,4,2,0]};
+const OP={'0|':[-1,3,2,0,1,0],'2|':[-1,-1,0,2,3,2],'7|':[3,2,0,0,0,3],'2|m':[-1,-1,0,2,3,1],'0|7':[-1,3,2,3,1,0],'2|7':[-1,-1,0,2,1,2],'7|7':[3,2,0,0,0,1],'11|7':[-1,2,1,2,0,2],'2|m7':[-1,-1,0,2,1,1],'0|maj7':[-1,3,2,0,0,0],'2|maj7':[-1,-1,0,2,2,2],'5|maj7':[-1,-1,3,2,1,0],'7|maj7':[3,2,0,0,0,2],'2|sus2':[-1,-1,0,2,3,0],'2|sus4':[-1,-1,0,2,3,3],'0|add9':[-1,3,2,0,3,0],
+  '7|add9':[3,-1,0,2,0,3],'2|7sus4':[-1,-1,0,2,1,3],'2|m7b5':[-1,-1,0,1,1,1],'2|dim7':[-1,-1,0,1,0,1],'2|m6':[-1,-1,0,2,0,1],'2|6':[-1,-1,0,2,0,2]};
+const TE={'':[0,2,2,1,0,0],m:[0,2,2,0,0,0],'7':[0,2,0,1,0,0],m7:[0,2,0,0,0,0],maj7:[0,2,1,1,0,0],sus4:[0,2,2,2,0,0],'6':[0,2,2,1,2,0],aug:[0,3,2,1,1,0],add9:[0,2,2,1,0,2],
+  '7sus4':[0,2,0,2,0,0],'9':[0,2,0,1,0,2],maj9:[0,2,1,1,0,2],'13':[0,2,0,1,2,0],'5':[0,2,2,null,null,null],
+  m6:[0,2,2,0,2,0],m9:[0,2,0,0,0,2],m11:[0,0,0,0,0,2],mmaj7:[0,2,1,0,0,0],m7b5:[0,null,0,0,-1,null],
+  dim7:[0,null,-1,0,-1,null],aug7:[0,null,0,1,1,0],'7b9':[0,null,0,1,0,1],'7#9':[0,null,0,1,3,3]};
+const TA={'':[null,0,2,2,2,0],m:[null,0,2,2,1,0],'7':[null,0,2,0,2,0],m7:[null,0,2,0,1,0],maj7:[null,0,2,1,2,0],sus4:[null,0,2,2,3,0],sus2:[null,0,2,2,0,0],dim:[null,0,1,2,1,null],aug:[null,0,3,2,2,1],'6':[null,0,2,2,2,2],add9:[null,0,2,4,2,0],
+  '7sus4':[null,0,2,0,3,0],'9':[null,0,-1,0,0,0],maj9:[null,0,-1,1,0,null],'6/9':[null,0,-1,-1,0,0],'11':[null,0,0,0,0,0],'13':[null,0,2,0,2,2],'5':[null,0,2,2,null,null],
+  m6:[null,0,2,2,1,2],m9:[null,0,-2,0,0,null],m11:[null,0,0,0,1,0],madd9:[null,0,2,4,1,0],mmaj7:[null,0,2,1,1,0],m7b5:[null,0,1,0,1,null],
+  dim7:[null,0,1,2,1,2],aug7:[null,0,3,0,2,1],'7b5':[null,0,1,0,2,null],'7b9':[null,0,2,3,2,3],'7#9':[null,0,-1,0,1,null]};
 function gs(pc,ty){
   const o=OP[pc+'|'+ty];if(o)return{f:o,r:0};
   const c=[];
-  if(TE[ty])c.push({r:(pc-4+12)%12,t:TE[ty]});
-  if(TA[ty])c.push({r:(pc-9+12)%12,t:TA[ty]});
+  const add=(r,t)=>{if(r+Math.min(...t.filter(x=>x!=null))<0)r+=12;c.push({r,t})};
+  if(TE[ty])add((pc-4+12)%12,TE[ty]);
+  if(TA[ty])add((pc-9+12)%12,TA[ty]);
   if(!c.length)return null;
   c.sort((x,y)=>x.r-y.r);
   const b=c[0],f=b.t.map(x=>x==null?-1:x+b.r);
   let bar=-1;
-  if(b.r>0){const ix=f.map((x,i)=>x===b.r?i:-1).filter(i=>i>=0);if(ix.length>=2&&ix.includes(5))bar=ix[0]}
+  if(b.r>0){const ix=f.map((x,i)=>x===b.r?i:-1).filter(i=>i>=0);if(ix.length>=2&&ix.includes(5)&&f.slice(ix[0]).every(x=>x<0||x>=b.r))bar=ix[0]}
   return{f,r:b.r,bar};
 }
 function gsvg(g){
@@ -354,8 +377,9 @@ function psvg(pc,iv,bs){
 }
 const UKE=[7,0,4,9];
 function us(pc,iv){
-  const need=[...new Set(iv.map(i=>(pc+i)%12))];let best=null,bc=1e9;
-  for(let a=0;a<=12;a++)for(let b=0;b<=12;b++)for(let c=0;c<=12;c++)for(let d=0;d<=12;d++){
+  let need=[...new Set(iv.map(i=>(pc+i)%12))];
+  [7,14].forEach(d=>{if(need.length>4&&iv.includes(d)&&iv.length>2)need=need.filter(p=>p!==(pc+d)%12)});let best=null,bc=1e9;
+  for(let a=0;a<=15;a++)for(let b=0;b<=15;b++)for(let c=0;c<=15;c++)for(let d=0;d<=15;d++){
     const f=[a,b,c,d],fr=f.filter(x=>x>0),mx=fr.length?Math.max(...fr):0,mn=fr.length?Math.min(...fr):0;
     if(fr.length&&mx-mn>3)continue;
     const ps=f.map((x,i)=>(UKE[i]+x)%12);
@@ -443,7 +467,7 @@ function rl(l,dir,edit,li){
     c.dataset.k=i;
     if(a.length){const h=el('span','ch');a.forEach((z,n)=>{const q=el('span','cd',tr(z));if(edit)drag(q,li,i,n,z);else q.onclick=e=>{e.stopPropagation();onChord&&onChord(tr(z),q)};h.append(q)});c.append(h)}
     c.append(el('span','tx',x));
-    if(edit){c.onclick=()=>{if(Date.now()<noClick)return;const a0=lc(l,i);pk=(i===-1&&a0.length)?Object.assign({li,k:i,ei:0},pp(a0[0])):{li,k:i};render()};if(pk&&pk.li===li&&pk.k===i&&pk.j==null)c.classList.add('sel')}
+    if(edit){c.onclick=()=>{if(Date.now()<noClick)return;const a0=lc(l,i);pk=(a0.length&&i!==cs.length)?Object.assign({li,k:i,ei:0},pp(a0[0])):{li,k:i};render()};if(pk&&pk.li===li&&pk.k===i&&pk.j==null)c.classList.add('sel')}
     return c};
   const C=cs.map((ch,i)=>cell(i,ch===' '?'\u00a0':ch));
   const st=(edit||lc(l,-1).length)?cell(-1,'\u00a0','st'):null;if(st)st.dir=dir;const en=(edit||lc(l,cs.length).length)?cell(cs.length,'\u00a0','en'):null;
@@ -870,13 +894,13 @@ function view(){
     const m=pp(name),pop=el('div','pop'),hd=el('div','ph');
     hd.append(el('b','',name),btn('✕',()=>closeP&&closeP(true),'b px','סגור'));
     pop.append(hd);
-    const iv=m&&!m.cust?TY[m.typ]:null;
+    const ty=m&&!m.cust?tyOf(m.typ):null,iv=ty?TY[ty]:null;
     if(!iv)pop.append(el('div','pn','אין תרשים לאקורד הזה'));
     else{
       const pc=pcOf(m.root+m.acc),bs=m.bass?pcOf(m.bass):null,box=el('div','pg');
       if(ins==='p')box.innerHTML=psvg(pc,iv,bs);
       else if(ins==='u'){const f=us(pc,iv);if(f)box.innerHTML=usvg(f);else box.textContent='אין תרשים לאקורד הזה'}
-      else{const g=gs(pc,m.typ);if(g)box.innerHTML=gsvg(g);else box.textContent='אין תרשים לאקורד הזה'}
+      else{const g=gs(pc,ty);if(g)box.innerHTML=gsvg(g);else box.textContent='אין תרשים לאקורד הזה'}
       pop.append(box,el('div','pn','תווים: '+[...new Set(iv.map(i=>N[(pc+i)%12]))].join(' ')+(m.bass?' · בס: '+N[bs]:'')));
     }
     document.body.append(pop);
@@ -1813,78 +1837,70 @@ function settings(){
 }
 
 const TRI='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6.5 7l1 13h9l1-13M10 11v6M14 11v6"/></svg>';
+// סוגי אקורדים לפי שכיחות ('' = מז'ור)
+const TYP=['','m','7','m7','maj7','sus4','sus2','add9','6','m6','9','m9','dim','dim7','aug','7sus4','maj9','6/9','11','13','5','m11','madd9','mmaj7','m7b5','aug7','7b5','7b9','7#9'];
+const BAS=['C','C#','Db','D','D#','Eb','E','F','F#','Gb','G','G#','Ab','A','A#','Bb','B'];
+// גלגל בחירה: 3 שורות גלויות, לחיצה על שורה בוחרת אותה, גלילה בוחרת את האמצעית
+function wheel(lab,items,val,show,pick){const H=28,col=el('div','wcol'),w=el('div','wwrap'),sc=el('div','wh');
+  sc.tabIndex=0;sc.setAttribute('role','listbox');sc.setAttribute('aria-label',lab);
+  let last=Math.max(0,items.indexOf(val)),tm;
+  items.forEach((x,i)=>{const it=el('div','wi'+(i===last?' cur':''),show(x));it.setAttribute('role','option');it.onclick=()=>{if(i!==last){last=i;pick(items[i])}else sc.scrollTo({top:i*H,behavior:'smooth'})};sc.append(it)});
+  sc.onkeydown=e=>{const d=e.key==='ArrowDown'?1:e.key==='ArrowUp'?-1:0;if(!d)return;e.preventDefault();const i=last+d;if(i>=0&&i<items.length){last=i;pick(items[i])}};
+  w.append(sc,el('div','wfd'));col.append(el('span','wlb',lab),w);
+  requestAnimationFrame(()=>{sc.scrollTop=last*H});
+  sc.onscroll=()=>{clearTimeout(tm);tm=setTimeout(()=>{const i=Math.min(items.length-1,Math.max(0,Math.round(sc.scrollTop/H)));if(i!==last){last=i;pick(items[i])}},90)};
+  return col}
+// בורר האקורדים: האקורד נכנס מעל האות מיד ומשתנה בזמן אמת, בלי מסך שני ובלי אישור
 function picker(){
-  const s=cur,l=s.lines[pk.li],isC=pk.k==='x',b=el('div','cb');
-  const editing=(isC?pk.j:pk.ei)!=null,rw=c=>el('div','rw ltr'+(c?' '+c:''));
-  const put=c=>{c=c.trim();if(!c)return;
-    if(isC){editing?l.x[pk.j]=c:l.x.push(c)}
-    else{const a=lc(l,pk.k);editing?a[pk.ei]=c:a.push(c);l.c[pk.k]=a.join(' ')}
-    pk=null;render()};
+  const s=cur,l=s.lines[pk.li],isC=pk.k==='x',b=el('div','cb'),editing=()=>(isC?pk.j:pk.ei)!=null;
+  const nm=()=>pk.root?pk.root+(pk.acc||'')+(pk.typ||'')+(pk.bass?'/'+pk.bass:''):(pk.cust||'');
+  const put=c=>{c=(c||'').trim();if(!c)return;
+    if(isC){editing()?l.x[pk.j]=c:(l.x.push(c),pk.j=l.x.length-1)}
+    else{const a=lc(l,pk.k);editing()?a[pk.ei]=c:(a.push(c),pk.ei=a.length-1);l.c[pk.k]=a.join(' ')}
+    render()};
+  const set=o=>{Object.assign(pk,o);if(pk.root){pk.cust='';pk.cm=false}put(nm())};
   const del=()=>{
     if(isC)l.x.splice(pk.j,1);
     else{const a=lc(l,pk.k);a.splice(pk.ei,1);a.length?l.c[pk.k]=a.join(' '):delete l.c[pk.k]}
     pk=null;render()};
-  const hl=x=>el('div','phd',x);
-  if(!pk.root&&!pk.cust){
-    b.classList.add('m1');
-    if(!isC&&!editing){const a=lc(l,pk.k);if(a.length){const r=rw();
-      a.forEach((c,i)=>{r.append(btn(c,()=>{Object.assign(pk,pp(c));pk.ei=i;render()},'b pk','ערוך '+c),btn('✕',()=>{pk.ei=i;del()},'b','מחק '+c))});
-      b.append(hl('במקום הזה'),r)}}
-    const cnt={};
-    s.lines.forEach(x=>(x.ty==='c'?x.x:Object.values(x.c).flatMap(z=>z.split(' '))).filter(Boolean).forEach(c=>{cnt[c]=(cnt[c]||0)+1}));
-    const used=Object.keys(cnt).sort((x,y)=>cnt[y]-cnt[x]).slice(0,5);
-    if(used.length){const r=rw();used.forEach(c=>r.append(btn(c,()=>put(c),'b pk us')));b.append(hl('אקורדים בשיר'),r,el('hr','sep'))}
-    const r=rw('fit');
-    ['C','D','E','F','G','A','B'].forEach(x=>r.append(btn(x,()=>{pk.root=x;pk.acc='';pk.typ='';pk.bass='';pk.cust='';render()},'b pk')));
-    b.append(hl('אקורד חדש'),r);
+  const mvk=d=>{const st=s.dir==='rtl'?-d:d,k2=pk.k+st;if(k2<-1||k2>chars(l.t).length||(k2===-1&&lc(l,-1).length))return;
+    const c=nm(),a=lc(l,pk.k);a.splice(pk.ei,1);a.length?l.c[pk.k]=a.join(' '):delete l.c[pk.k];
+    const b2=lc(l,k2);b2.push(c);l.c[k2]=b2.join(' ');pk.k=k2;pk.ei=b2.length-1;render()};
+  // שורה עליונה: מחיקה משמאל, האקורד המלא באמצע, הקלדה חופשית מימין
+  const r1=el('div','pvr'),L=el('div','pside'),M=el('div','pmid'),R=el('div','pside r');
+  // אין כפתור אישור: האקורד כבר במקום. הפח מוחק, או מבטל אקורד חדש שעוד לא נבחר
+  L.append(ibt('trash',()=>{if(editing())del();else{pk=null;render()}},'b ic',editing()?'מחק אקורד':'ביטול'));
+  const mv=!isC&&editing();
+  if(mv)M.append(btn('◀',()=>mvk(-1),'b pa','הזז אות שמאלה'));
+  M.append(el('div','pv'+(nm()?'':' pv0')+(nm().length>9?' pvx':nm().length>6?' pvl':''),nm()||'בחר תו'));
+  if(mv)M.append(btn('▶',()=>mvk(1),'b pa','הזז אות ימינה'));
+  R.append(btn('✎',()=>{pk.cm=!pk.cm;render()},'b'+(pk.cm?' on':''),'הקלדה חופשית'));
+  r1.append(L,M,R);b.append(r1);
+  // האקורדים שכבר בשיר (5 הנפוצים)
+  const cnt={};
+  s.lines.forEach(x=>(x.ty==='c'?x.x:Object.values(x.c).flatMap(z=>z.split(' '))).filter(Boolean).forEach(c=>{cnt[c]=(cnt[c]||0)+1}));
+  const used=Object.keys(cnt).sort((x,y)=>cnt[y]-cnt[x]).slice(0,5);
+  if(used.length){const r=el('div','rw ltr pus');used.forEach(c=>r.append(btn(c,()=>{pk.cm=false;set(Object.assign({root:'',acc:'',typ:'',bass:'',cust:''},pp(c)))},'b pk us'+(nm()===c?' on':''))));b.append(r)}
+  if(pk.cm||(!pk.root&&pk.cust)){
+    const inp=el('input');inp.placeholder='אקורד';inp.setAttribute('aria-label','אקורד');inp.value=nm();inp.dir='ltr';
+    inp.onkeydown=e=>{if(e.key==='Enter'){const c=inp.value.trim();if(!c)return;pk.cm=false;Object.assign(pk,{root:'',acc:'',typ:'',bass:'',cust:''},pp(c));put(c)}};
+    const w=el('div','cu');w.append(inp,btn('הכנס',()=>inp.onkeydown({key:'Enter'}),'b pr'));setTimeout(()=>inp.focus(),0);b.append(w);
   }else{
-    b.classList.add('m2');
-    const custom=pk.cm||!pk.root,tail=()=>pk.bass?'/'+pk.bass:'';
-    const inp=el('input');inp.placeholder=pk.root?'סיומת: m9, 7sus4':'אקורד';inp.setAttribute('aria-label','אקורד');inp.value=pk.root?pk.typ:pk.cust;
-    const nmv=()=>custom?(pk.root?pk.root+pk.acc+inp.value.trim()+tail():inp.value.trim()):pk.root+pk.acc+pk.typ+tail();
-    const nameEl=el('div','pv',nmv());
-    inp.oninput=()=>{nameEl.textContent=nmv()};
-    inp.onkeydown=e=>{if(e.key==='Enter')put(nmv())};
-    const mvk=d=>{const st=s.dir==='rtl'?-d:d,k2=pk.k+st;if(k2<-1||k2>chars(l.t).length||(k2===-1&&lc(l,-1).length))return;
-      if(custom&&pk.root)pk.typ=inp.value.trim();
-      const c=nmv(),a=lc(l,pk.k);a.splice(pk.ei,1);a.length?l.c[pk.k]=a.join(' '):delete l.c[pk.k];
-      const b2=lc(l,k2);b2.push(c);l.c[k2]=b2.join(' ');pk.k=k2;pk.ei=b2.length-1;render()};
-    const r1=el('div','pvr'),L=el('div','pside'),M=el('div','pmid'),R=el('div','pside r');
-    if(editing)L.append(ibt('trash',del,'b ic','מחק אקורד'));
-    const mv=!isC&&editing&&pk.root;
-    if(mv)M.append(btn('◀',()=>mvk(-1),'b','הזז אות שמאלה'));
-    M.append(nameEl);
-    if(mv)M.append(btn('▶',()=>mvk(1),'b','הזז אות ימינה'));
-    R.append(ibt('back',()=>{if(pk.cm)pk.cm=false;else{pk.root=null;pk.cust=''}pk.bo=pk.oo=false;render()},'b ic','חזרה'),
-      ibt('ok',()=>put(nmv()),'b pr ic',editing?'שמור':'הוסף'));
-    r1.append(L,M,R);
-    b.append(r1);
-    const cu=()=>{const w=el('div','cu');w.append(inp);setTimeout(()=>inp.focus(),0);return w};
-    if(!pk.root){b.append(cu())}
-    else{
-      const drop=(label,on,key,items)=>{
-        const w=el('div','flw');
-        w.append(btn(label+(pk[key]?' ▴':' ▾'),()=>{pk[key]=!pk[key];if(pk[key])pk[key==='bo'?'oo':'bo']=false;render()},'b flb'+(on?' on':'')));
-        if(pk[key]){const Ls=el('div','fl');items.forEach(([x,act,f])=>Ls.append(btn(x,()=>{pk[key]=false;f()},'b fi'+(act?' on':''))));w.append(Ls)}
-        return w};
-      const r2=rw('fit');
-      r2.append(btn('♯',()=>{pk.acc=pk.acc==='#'?'':'#';render()},'b'+(pk.acc==='#'?' on':''),'דיאז'),
-        btn('♭',()=>{pk.acc=pk.acc==='b'?'':'b';render()},'b'+(pk.acc==='b'?' on':''),'במול'),
-        drop('בס'+(pk.bass?' '+pk.bass:''),!!pk.bass,'bo',[['ללא',!pk.bass,()=>{pk.bass='';render()}]].concat(N.map(x=>[x,pk.bass===x,()=>{pk.bass=x;render()}]))),
-        btn('✎',()=>{pk.cm=!pk.cm;pk.bo=pk.oo=false;render()},'b'+(pk.cm?' on':''),'הקלדה חופשית'));
-      b.append(r2);
-      if(custom)b.append(cu());
-      else{
-        const MAIN=['','m','7','m7'],OT=['maj7','sus4','sus2','dim','aug','6','add9'];
-        if(!MAIN.includes(pk.typ)&&!OT.includes(pk.typ))OT.push(pk.typ);
-        const r3=rw('fit'),nm=pk.root+pk.acc;
-        MAIN.forEach(x=>r3.append(btn(nm+x,()=>{pk.typ=x;render()},'b pk'+(pk.typ===x?' on':''))));
-        r3.append(drop('אחר',!MAIN.includes(pk.typ),'oo',OT.map(x=>[nm+x,pk.typ===x,()=>{pk.typ=x;render()}])));
-        b.append(r3);
-      }
-    }
+    // שורת תווים: לחיצה שמה את האקורד
+    const r=el('div','rw ltr fit');
+    ['C','D','E','F','G','A','B'].forEach(x=>r.append(btn(x,()=>set({root:x}),'b pk'+(pk.root===x?' on':''))));
+    b.append(r);
+    // גלגלים: דיאז/במול, סוג, בס. שינוי לפני שנבחר תו נשמר ונכנס עם התו
+    const ty=TYP.includes(pk.typ||'')?TYP:TYP.concat([pk.typ]),bs=BAS.includes(pk.bass||'')||!pk.bass?BAS:BAS.concat([pk.bass]);
+    const chg=o=>{Object.assign(pk,o);pk.root?set({}):render()};
+    const ws=el('div','whs');
+    ws.append(wheel('♯ / ♭',['b','','#'],pk.acc||'',x=>x==='#'?'♯':x==='b'?'♭':'—',x=>chg({acc:x})),
+      wheel('סוג',ty,pk.typ||'',x=>x||'Major',x=>chg({typ:x})),
+      wheel('בס',[''].concat(bs),pk.bass||'',x=>x?'/'+x:'—',x=>chg({bass:x})));
+    b.append(ws);
   }
   const spc=el('div');spc.style.height='calc(260px + env(safe-area-inset-bottom,0px))';A.append(spc,b);
+  requestAnimationFrame(()=>{spc.style.height=(b.offsetHeight+16)+'px'});
 }
 
 function exitEdit(){
@@ -1962,7 +1978,6 @@ function render(){
 }
 document.addEventListener('click',e=>{
   if(v!=='ed'||tab!=='c'||!pk)return;
-  if((pk.bo||pk.oo)&&!e.target.closest('.flw')){pk.bo=pk.oo=false;render();return}
   if(!e.target.closest('.cb,.cl,.cd,.cc,.gap,.b')){pk=null;render()}
 });
 let pinch=null,wt=0;
@@ -2044,7 +2059,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
   vv.addEventListener('resize',upd);vv.addEventListener('scroll',upd);upd()})();
 try{fixDemoArtist()}catch(e){}
 // ===== הדבקת שיר עם אקורדים (מאתרים אחרים) =====
-const CHRE=/^[A-G][#b]?(?:maj|min|m|M|dim|aug|sus|add|°|ø|\+|-)?\d*(?:(?:maj|sus|add|b|#|\+|-)?\d+)*(?:\([^)\s]*\))?(?:\/[A-G][#b]?)?$/;
+const CHRE=/^[A-G][#b]?(?:maj|min|m|M|dim|aug|sus|add|°|ø|\+|-)?\d*(?:(?:maj|sus|add|b|#|\+|-)?\d+)*(?:\/9)?(?:\([^)\s]*\))?(?:\/[A-G][#b]?)?$/;
 const CHFILL=/^(?:\||\|\||x\d+|\(x\d+\)|-+|\.+|%|\/)$/i;
 const LABRE=/^(?:פתיחה|בית|פזמון(?: חוזר)?|גשר|מעבר|סיום|סולו|קודה|אינטרו|intro|verse|chorus|pre-?chorus|bridge|outro|solo|interlude|instrumental|refrain|hook|coda|ending|break)(?:\s*\d+)?\s*:?$/i;
 function isChordLine(L){const tk=L.trim().split(/\s+/).filter(Boolean);return tk.length>0&&tk.some(x=>CHRE.test(x))&&tk.every(x=>CHRE.test(x)||CHFILL.test(x))}
