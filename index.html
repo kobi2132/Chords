@@ -277,7 +277,9 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 // מספר הגרסה מתעדכן אוטומטית בכל עדכון (git pre-commit)
 // BETA: סביבת הבדיקות (akordi-dev.pages.dev) – שרת נפרד, קובץ נפרד ב-Drive ופרויקט Google נפרד, כך ששום בדיקה לא נוגעת באפליקציה האמיתית
 const BETA=!!window.BETA,LOGO=BETA?'icon-beta.svg':'icon.svg';
-const APPV='0.78b19';
+// מעבר לכתובת החדשה: הכתובת הישנה (github.io) מעבירה את כל מה שבמכשיר בקישור לכתובת החדשה, בלי שרת. MVTEST: בדיקה מקומית (localhost:8765/?mvtest ← 8767)
+const MVTEST=location.hostname==='localhost'&&/[?&]mvtest\b/.test(location.search),NEWURL=MVTEST?'http://localhost:8767/':'https://akordi.jacob-apps.co.il/',OLDHOST=location.hostname==='kobi2132.github.io'||MVTEST,mvIn=/^#m=[zp]/.test(location.hash);
+const APPV='0.78b20';
 const verName=x=>{x=x||'';let m=x.match(/^(\d+\.\d+)b(\d+)$/);if(m)return 'Akordi '+m[1]+' beta '+m[2];return /^\d+\.\d+$/.test(x)?'Akordi '+x:x?'beta':'–'};
 let favOnly=false,galSong=null,incoming=null,S=[],v='list',cur=null,tab='l',pk=null,t=0,fs=18,sp=3,timer=null,tbc=false,pv='',ins='g',onChord=null,closeP=null;
 try{S=JSON.parse(localStorage.getItem('chords_songs')||'[]')}catch(e){}
@@ -698,6 +700,7 @@ function list(){
   if(myName())btx.append(el('p','hello','שלום, '+myName()));
   brd.append(blg,btx);hdr.append(brd);
   const fN=devForce;devForce=null;
+  if(OLDHOST)hdr.append(moveNudge());else
   if(fN==='help'||(!fN&&helpNudgeOk()))hdr.append(helpNudge());else
   if(fN==='login'||(!fN&&!acct&&S.length>=3&&nudgeOk('login')))hdr.append(mkNudge('login','השירים שלך שמורים רק במכשיר הזה. התחבר כדי לגבות אותם.','התחבר',()=>{v='wel';render()},'לא נציג את זה שוב. אפשר להתחבר בכל זמן מההגדרות'));
   else if(fN==='inst'||(!fN&&instNudgeOk()))hdr.append(instNudge());
@@ -1075,18 +1078,18 @@ function mergeSongs(arr,o){o=o||{};let a=0,u=0,k=0,bad=0;
   sv();return{a,u,k,bad}}
 function parseBk(txt){const o=JSON.parse(txt),arr=Array.isArray(o)?o:o&&Array.isArray(o.songs)?o.songs:null;if(!arr)throw new Error('bad');return{arr,ins:o&&o.ins}}
 const b64=u=>{let b='';u.forEach(x=>b+=String.fromCharCode(x));return btoa(b).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')};
-async function songLink(s){
-  const o=JSON.stringify(strip(s));let d,pre;
+// טקסט ⇄ מחרוזת קצרה לקישור (דחיסה כשהדפדפן תומך): משמש לשיתוף שיר ולמעבר לכתובת החדשה
+async function packStr(o){let d,pre;
   if(window.CompressionStream){d=new Uint8Array(await new Response(new Blob([o]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer());pre='z'}
   else{d=new TextEncoder().encode(o);pre='p'}
-  return location.origin+location.pathname+'#s='+pre+b64(d);
-}
+  return pre+b64(d)}
+async function unpackStr(pre,x){const u=Uint8Array.from(atob(x.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+  if(pre==='z'){if(!window.DecompressionStream)return null;return await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text()}
+  return new TextDecoder().decode(u)}
+async function songLink(s){return location.origin+location.pathname+'#s='+await packStr(JSON.stringify(strip(s)))}
 async function readLink(){
   const m=location.hash.match(/^#s=([zp])([\w-]+)/);if(!m)return null;
-  const u=Uint8Array.from(atob(m[2].replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
-  let txt;
-  if(m[1]==='z'){if(!window.DecompressionStream)return null;txt=await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text()}
-  else txt=new TextDecoder().decode(u);
+  const txt=await unpackStr(m[1],m[2]);if(txt==null)return null;
   const o=JSON.parse(txt);return okSong(o)?o:null;
 }
 
@@ -1248,7 +1251,7 @@ function insPicker(cur0,onPick){
   ['p','g','u'].forEach(k=>{const b=btn('',()=>{onPick(k);[...r.children].forEach((x,n)=>x.classList.toggle('on',['p','g','u'][n]===k))},'b insb'+(cur0===k?' on':''),NM[k]);b.innerHTML=IC[k];b.append(NM[k]);r.append(b)});
   return r;
 }
-function loading(){const w=el('div','wel');w.append(el('h1','','רגע...'),el('p','tag','טוען את הנתונים שלך מ-Google Drive'));A.append(w)}
+function loading(){const w=el('div','wel');w.append(el('h1','','רגע...'),el('p','tag',mvIn?'מעביר את השירים שלך':'טוען את הנתונים שלך מ-Google Drive'));A.append(w)}
 function onboard(){
   const w=el('div','wel');
   w.append(el('h1','','ברוך הבא'));
@@ -1426,7 +1429,7 @@ async function appVer(){return APPV}
 async function userKey(){try{if(!acct||!acct.sub||!(window.crypto&&crypto.subtle))return null;const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('akordi-user:'+acct.sub));return [...new Uint8Array(h)].slice(0,16).map(b=>b.toString(16).padStart(2,'0')).join('')}catch(e){return null}}
 let pinging=false;
 async function dailyPing(force){
-  if(pinging||!navigator.onLine||location.protocol==='file:'||inArtifact||(!force&&lsG('chords_pday','')===dayStr()))return false;
+  if(pinging||mvIn||!navigator.onLine||location.protocol==='file:'||inArtifact||(!force&&lsG('chords_pday','')===dayStr()))return false;
   pinging=true;
   try{let msg=null;
     if(noPing()){const r=await fetch(API+'/msg');if(r.ok)msg=(await r.json()).msg}
@@ -2065,8 +2068,9 @@ if(oauthBack){
   if(oauthBack.first){v='load';onFirstLogin()}
   else{const s2=oauthBack.cid!=null?S.find(x=>x.id===oauthBack.cid):null;if(s2){cur=s2;t=s2.tp||0;v='vw'}else if(oauthBack.v==='set')v='set';syncNow()}
 }else if(oauthErr){setTimeout(()=>toast('ההתחברות בוטלה'),300);if(pend&&!welSeen())v='wel'}
-if(!oauthBack&&!oauthErr&&!/^#s=/.test(location.hash))loadNav();
-if(!oauthBack&&!/^#s=/.test(location.hash)&&!acct&&!welSeen())v='wel';
+if(!oauthBack&&!oauthErr&&!/^#[sm]=/.test(location.hash))loadNav();
+if(!oauthBack&&!/^#[sm]=/.test(location.hash)&&!acct&&!welSeen())v='wel';
+if(mvIn)v='load';
 if(acct){if(!isIOS)loadGIS().catch(()=>{});if(!tok)loadTok();if(!tokOk())setCloud('need');else if(!oauthBack)setTimeout(syncNow,300)}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&acct&&tokOk()&&!syncing&&Date.now()-lastSync>30000)syncNow()});
 (function(){const vv=window.visualViewport;if(!vv)return;const st=document.documentElement.style;
@@ -2224,6 +2228,39 @@ if('serviceWorker' in navigator&&location.protocol!=='file:'){
 
 render();
 if(navY){const y0=navY;navY=0;requestAnimationFrame(()=>scrollTo(0,y0));setTimeout(()=>{if(scrollY<5)scrollTo(0,y0)},300)}
+// ===== מעבר לכתובת החדשה =====
+// לא עוברים: ההתחברות לגוגל (שייכת לכתובת, מתחברים שוב), המסך הנוכחי והודעה שממתינה
+const MVSKIP=/^chords_(tok|oauth|nav|msgpend)$/,MVMERGE=['chords_songs','chords_del','chords_folders','chords_fupd','chords_ins','chords_pupd'];
+function moveNudge(){trackB('move','s');const nb=el('div','nudge');nb.append(el('span','','אקורדי עוברת לכתובת חדשה. העבר את השירים שלך בלחיצה אחת.'),btn('מעבר',moveGo,'b pr'));return nb}
+async function moveGo(){
+  if(!await dlg({title:'מעבר לכתובת החדשה',text:'השירים, התיקיות וההגדרות יעברו איתך לכתובת החדשה, ויישארו גם כאן.'+(acct?' שם תתבקש להתחבר שוב עם Google.':''),ok:'מעבר'}))return;
+  trackB('move','a');
+  const o={};try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(/^chords_/.test(k)&&!MVSKIP.test(k))o[k]=localStorage.getItem(k)}}catch(e){}
+  const u=NEWURL+'#m='+await packStr(JSON.stringify({app:'chords',mv:1,ls:o}));
+  if(u.length>15e5){dlg({title:'יש לך הרבה שירים',text:'הם לא נכנסים בהעברה אחת. התחבר עם Google בהגדרות כדי לגבות אותם, ואז התחבר עם אותו חשבון בכתובת החדשה. אפשר גם לשמור קובץ גיבוי בהגדרות ולפתוח אותו שם.',ok:'הבנתי',noCancel:true});return}
+  try{localStorage.setItem('chords_moved',String(Date.now()))}catch(e){}
+  location.href=u}
+// בכתובת החדשה: שירים, מחיקות, תיקיות והעדפות מתמזגים עם מה שכבר יש כאן (החדש מנצח), ושאר ההגדרות מגיעות מהכתובת הישנה
+async function moveIn(){
+  const m=location.hash.match(/^#m=([zp])([\w-]+)/);let ok=false;
+  try{const txt=m&&await unpackStr(m[1],m[2]),o=txt&&JSON.parse(txt),ls=o&&o.app==='chords'&&o.mv===1&&o.ls;
+    if(ls&&typeof ls==='object'){
+      const js=(k,d)=>{try{return JSON.parse(ls[k])??d}catch(e){return d}};
+      mergeRemote({songs:js('chords_songs',[]),del:js('chords_del',{}),folders:{list:js('chords_folders',[]),upd:+ls.chords_fupd||0},prefs:{ins:ls.chords_ins,upd:+ls.chords_pupd||0}});
+      sv();saveDel();
+      Object.keys(ls).forEach(k=>{if(!/^chords_/.test(k)||MVSKIP.test(k)||MVMERGE.includes(k)||typeof ls[k]!=='string'||(k==='chords_acct'&&acct))return;try{localStorage.setItem(k,ls[k])}catch(e){}});
+      ok=true}
+  }catch(e){}
+  try{sessionStorage.setItem('chords_mvok',ok?'1':'0');sessionStorage.removeItem('chords_nav');history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+  location.reload()}
+if(mvIn)moveIn();
+else{let r=null;try{r=sessionStorage.getItem('chords_mvok');sessionStorage.removeItem('chords_mvok')}catch(e){}
+  if(r==='1')setTimeout(async()=>{
+    const t=acct?'כדי להמשיך לגבות ל-Google Drive, התחבר שוב.':'';
+    const st=isStandalone();
+    const a=await dlg({title:'השירים שלך עברו',text:'מעכשיו פותחים את אקורדי מכאן.'+(st?'':' אם אקורדי מותקנת אצלך במסך הבית, התקן אותה מחדש מכאן ומחק את האייקון הישן.')+(t?' '+t:''),ok:acct&&!tokOk()?'התחבר':st?'סגור':'התקן',cancel:'אחר כך',noCancel:st&&!acct});
+    if(!a)return;if(acct&&!tokOk())signIn(false);else if(!st)installApp()},600);
+  else if(r==='0')setTimeout(()=>toast('ההעברה לא הצליחה. נסה שוב מהכתובת הישנה',4000),600)}
 (async()=>{try{const sh=await readLink();if(sh){incoming=sh;cur=sh;t=0;v='vw';try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}render()}}catch(e){}})();
 </script>
 </body>
