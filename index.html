@@ -73,7 +73,7 @@ textarea.f{min-height:300px;line-height:1.6}
 .ed .cd{cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;padding:3px 4px;margin:-3px -4px}
 .cl.dt{background:var(--hl);outline:2px solid var(--ch)}
 .pvr{display:flex;align-items:center;gap:8px;direction:ltr}
-.pmid{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:10px}
+.pmid{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:6px}
 .pl2{display:flex;gap:6px;align-items:center}
 .rw.ltr{direction:ltr}
 .sl{min-width:1.4em}
@@ -105,7 +105,8 @@ textarea.f{min-height:300px;line-height:1.6}
 .cb .rw{margin:3px 0}
 .rw.fit{flex-wrap:nowrap}.rw.fit>*{flex:1 1 0;min-width:0}.rw.fit .b{padding-inline:2px;width:100%}
 .sar[hidden]{display:none}
-.pside{flex:0 0 88px;display:flex;gap:6px;align-items:center}.pside.r{justify-content:flex-end}
+.pside{flex:0 0 46px;display:flex;gap:6px;align-items:center}.pside.r{justify-content:flex-end}
+.pmid .pv{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pv.pvl{font-size:1.1rem}.pv.pvx{font-size:.95rem}.pmid .pa{padding-inline:7px;min-width:0}
 .pv.pv0{color:var(--mut);font-weight:400;font-size:1rem}
 .pus{flex-wrap:nowrap;overflow-x:auto;justify-content:center;scrollbar-width:none}
 .whs{display:grid;grid-template-columns:.8fr 1.4fr 1fr;gap:6px;direction:ltr}
@@ -276,7 +277,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 // מספר הגרסה מתעדכן אוטומטית בכל עדכון (git pre-commit)
 // BETA: סביבת הבדיקות (akordi-dev.pages.dev) – שרת נפרד, קובץ נפרד ב-Drive ופרויקט Google נפרד, כך ששום בדיקה לא נוגעת באפליקציה האמיתית
 const BETA=!!window.BETA,LOGO=BETA?'icon-beta.svg':'icon.svg';
-const APPV='0.75b11';
+const APPV='0.75b12';
 const verName=x=>{x=x||'';let m=x.match(/^(\d+\.\d+)b(\d+)$/);if(m)return 'Akordi '+m[1]+' beta '+m[2];return /^\d+\.\d+$/.test(x)?'Akordi '+x:x?'beta':'–'};
 let favOnly=false,galSong=null,incoming=null,S=[],v='list',cur=null,tab='l',pk=null,t=0,fs=18,sp=3,timer=null,tbc=false,pv='',ins='g',onChord=null,closeP=null;
 try{S=JSON.parse(localStorage.getItem('chords_songs')||'[]')}catch(e){}
@@ -1865,14 +1866,14 @@ function picker(){
   const mvk=d=>{const st=s.dir==='rtl'?-d:d,k2=pk.k+st;if(k2<-1||k2>chars(l.t).length||(k2===-1&&lc(l,-1).length))return;
     const c=nm(),a=lc(l,pk.k);a.splice(pk.ei,1);a.length?l.c[pk.k]=a.join(' '):delete l.c[pk.k];
     const b2=lc(l,k2);b2.push(c);l.c[k2]=b2.join(' ');pk.k=k2;pk.ei=b2.length-1;render()};
-  // שורה עליונה: סיום ומחיקה משמאל, האקורד המלא באמצע, הקלדה חופשית מימין
+  // שורה עליונה: מחיקה משמאל, האקורד המלא באמצע, הקלדה חופשית מימין
   const r1=el('div','pvr'),L=el('div','pside'),M=el('div','pmid'),R=el('div','pside r');
-  L.append(ibt('ok',()=>{pk=null;render()},'b pr ic','סיום'));
-  if(editing())L.append(ibt('trash',del,'b ic','מחק אקורד'));
+  // אין כפתור אישור: האקורד כבר במקום. הפח מוחק, או מבטל אקורד חדש שעוד לא נבחר
+  L.append(ibt('trash',()=>{if(editing())del();else{pk=null;render()}},'b ic',editing()?'מחק אקורד':'ביטול'));
   const mv=!isC&&editing();
-  if(mv)M.append(btn('◀',()=>mvk(-1),'b','הזז אות שמאלה'));
-  M.append(el('div','pv'+(nm()?'':' pv0'),nm()||'בחר תו'));
-  if(mv)M.append(btn('▶',()=>mvk(1),'b','הזז אות ימינה'));
+  if(mv)M.append(btn('◀',()=>mvk(-1),'b pa','הזז אות שמאלה'));
+  M.append(el('div','pv'+(nm()?'':' pv0')+(nm().length>9?' pvx':nm().length>6?' pvl':''),nm()||'בחר תו'));
+  if(mv)M.append(btn('▶',()=>mvk(1),'b pa','הזז אות ימינה'));
   R.append(btn('✎',()=>{pk.cm=!pk.cm;render()},'b'+(pk.cm?' on':''),'הקלדה חופשית'));
   r1.append(L,M,R);b.append(r1);
   // האקורדים שכבר בשיר (5 הנפוצים)
