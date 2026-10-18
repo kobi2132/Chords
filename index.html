@@ -277,7 +277,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 // מספר הגרסה מתעדכן אוטומטית בכל עדכון (git pre-commit)
 // BETA: סביבת הבדיקות (akordi-dev.pages.dev) – שרת נפרד, קובץ נפרד ב-Drive ופרויקט Google נפרד, כך ששום בדיקה לא נוגעת באפליקציה האמיתית
 const BETA=!!window.BETA,LOGO=BETA?'icon-beta.svg':'icon.svg';
-const APPV='0.77';
+const APPV='0.78b18';
 const verName=x=>{x=x||'';let m=x.match(/^(\d+\.\d+)b(\d+)$/);if(m)return 'Akordi '+m[1]+' beta '+m[2];return /^\d+\.\d+$/.test(x)?'Akordi '+x:x?'beta':'–'};
 let favOnly=false,galSong=null,incoming=null,S=[],v='list',cur=null,tab='l',pk=null,t=0,fs=18,sp=3,timer=null,tbc=false,pv='',ins='g',onChord=null,closeP=null;
 try{S=JSON.parse(localStorage.getItem('chords_songs')||'[]')}catch(e){}
@@ -1416,7 +1416,8 @@ function did(){let x=lsG('chords_did',null);if(typeof x!=='string'||!/^[a-z0-9-]
 function track(k){if(noPing())return;const o=lsG('chords_ev',{});o[k]=(o[k]||0)+1;lsS('chords_ev',o)}
 const bnSeen=new Set();
 function trackB(k,a){if(noPing())return;if(a==='s'){if(bnSeen.has(k))return;bnSeen.add(k)}const o=lsG('chords_bn',{});o[k]=o[k]||{};o[k][a]=(o[k][a]||0)+1;lsS('chords_bn',o)}
-function trackErr(m){if(noPing()||!m)return;m=String(m).slice(0,200);if(/^Script error\.?$|Failed to fetch|Load failed|NetworkError|AbortError|The user aborted/i.test(m))return;const a=lsG('chords_er',[]);if(!a.includes(m)&&a.length<10){a.push(m);lsS('chords_er',a)}}
+function trackErr(m){if(noPing()||!m)return;m=String(m).slice(0,200);// מסננים גם שגיאות של קוד שאפליקציות אחרות מזריקות לדפדפן הפנימי שלהן (פייסבוק, אינסטגרם...) – לא של אקורדי
+  if(/^Script error\.?$|Failed to fetch|Load failed|NetworkError|AbortError|The user aborted|Java object is gone|Java bridge method/i.test(m))return;const a=lsG('chords_er',[]);if(!a.includes(m)&&a.length<10){a.push(m);lsS('chords_er',a)}}
 window.addEventListener('error',e=>trackErr((e.message||'error')+(e.lineno?' @'+e.lineno:'')));
 window.addEventListener('unhandledrejection',e=>{const r=e.reason;trackErr('promise: '+((r&&r.message)||r))});
 const dayStr=()=>{const o=ilParts(Date.now());return o.year+'-'+o.month+'-'+o.day};
