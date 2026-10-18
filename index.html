@@ -277,7 +277,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 // מספר הגרסה מתעדכן אוטומטית בכל עדכון (git pre-commit)
 // BETA: סביבת הבדיקות (akordi-dev.pages.dev) – שרת נפרד, קובץ נפרד ב-Drive ופרויקט Google נפרד, כך ששום בדיקה לא נוגעת באפליקציה האמיתית
 const BETA=!!window.BETA,LOGO=BETA?'icon-beta.svg':'icon.svg';
-const APPV='0.78b18';
+const APPV='0.78b19';
 const verName=x=>{x=x||'';let m=x.match(/^(\d+\.\d+)b(\d+)$/);if(m)return 'Akordi '+m[1]+' beta '+m[2];return /^\d+\.\d+$/.test(x)?'Akordi '+x:x?'beta':'–'};
 let favOnly=false,galSong=null,incoming=null,S=[],v='list',cur=null,tab='l',pk=null,t=0,fs=18,sp=3,timer=null,tbc=false,pv='',ins='g',onChord=null,closeP=null;
 try{S=JSON.parse(localStorage.getItem('chords_songs')||'[]')}catch(e){}
@@ -2151,7 +2151,8 @@ function pasteSong(fid){
   const ti=el('input','f');ti.placeholder='שם השיר';ti.maxLength=80;ti.setAttribute('aria-label','שם השיר');
   const ar=el('input','f');ar.placeholder='אמן';ar.maxLength=80;ar.setAttribute('aria-label','אמן');
   const st=el('select','f');st.setAttribute('aria-label','מאיזה אתר הועתק השיר');
-  [['','מאיזה אתר הועתק השיר?'],['nagnu','נגנו'],['negina','נגינה'],['ug','Ultimate Guitar'],['cifra','Cifra Club'],['auto','אחר (זיהוי אוטומטי)']].forEach(([k,x],i)=>{const o=el('option','',x);o.value=k;if(!i){o.disabled=true;o.selected=true}st.append(o)});
+  // אתרים שעוד אין להם התאמה (s) מוצגים "בקרוב" ולא ניתנים לבחירה
+  [['','מאיזה אתר הועתק השיר?'],['nagnu','נגנו'],['negina','נגינה',1],['ug','Ultimate Guitar',1],['cifra','Cifra Club',1],['auto','אחר (זיהוי אוטומטי)']].forEach(([k,x,s],i)=>{const o=el('option','',s?x+' (בקרוב)':x);o.value=k;if(s)o.disabled=true;if(!i){o.disabled=true;o.selected=true}st.append(o)});
   st.onchange=()=>{st.classList.remove('bad');er.hidden=true};
   const ta=el('textarea','f');ta.rows=10;ta.dir='auto';ta.placeholder='הדבק כאן את השיר,\nעם שורות האקורדים מעל המילים';ta.setAttribute('aria-label','השיר עם האקורדים');
   const er=el('p','perr');er.hidden=true;
