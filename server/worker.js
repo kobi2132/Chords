@@ -5,7 +5,7 @@
 //   TG_TOKEN    – סוד (Secret, לא חובה): מפתח של בוט טלגרם, להתראה על פנייה חדשה. ההתראה כוללת רק את סוג הפנייה.
 // לא נשמרים: מייל (חוץ ממשוב שהמשתמש בחר לצרף אליו מייל), שם, כתובת IP או תוכן שירים.
 
-const ORIGINS = ['https://kobi2132.github.io', 'https://akordi-dev.pages.dev', 'http://localhost:8765', 'http://localhost:8766'];
+const ORIGINS = ['https://kobi2132.github.io', 'https://akordi.jacob-apps.co.il', 'https://akordi-dev.pages.dev', 'http://localhost:8765', 'http://localhost:8766'];
 const DAY_MS = 864e5;
 let BETA_SRV = false; // נקבע לפי כתובת השרת – אותו קוד משמש את השרת האמיתי ואת שרת הבדיקות
 // כל התאריכים לפי שעון ישראל
