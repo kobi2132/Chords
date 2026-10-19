@@ -39,6 +39,7 @@ body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Segoe 
 .mi.on{background:var(--hl)}
 .ic svg,.mi svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .pg{display:flex;justify-content:center;direction:ltr}.pn{color:var(--mut);font-size:.85rem;text-align:center;margin-top:6px}
+.sxn{direction:ltr;text-align:center;font-size:1.6rem;font-weight:600;color:var(--ch);white-space:pre;padding:2px 16px}
 button,select,input,textarea{font:inherit;color:inherit}
 .b{background:var(--cd);border:1px solid var(--bd);border-radius:8px;padding:7px 12px;cursor:pointer;text-decoration:none;color:var(--fg)}
 .b:focus-visible,input:focus-visible,textarea:focus-visible,.gap:focus-visible{outline:2px solid var(--ch);outline-offset:2px}
@@ -282,7 +283,7 @@ const BETA=!!window.BETA,LOGO=BETA?'icon-beta.svg':'icon.svg';
 const MVTEST=location.hostname==='localhost'&&/[?&]mvtest\b/.test(location.search),NEWURL=MVTEST?'http://localhost:8767/':'https://akordi.jacob-apps.co.il/',OLDHOST=location.hostname==='kobi2132.github.io'||MVTEST,mvIn=/^#m=[zp]/.test(location.hash);
 // קישור לשיר ששותף מהכתובת הישנה – ממשיכים איתו לכתובת החדשה, כדי שהשיר לא ילך לאיבוד במסך המעבר
 if(OLDHOST&&/^#s=[zp]/.test(location.hash))location.replace(NEWURL+location.hash);
-const APPV='0.80b28';
+const APPV='0.80b29';
 const verName=x=>{x=x||'';let m=x.match(/^(\d+\.\d+)b(\d+)$/);if(m)return 'Akordi '+m[1]+' beta '+m[2];return /^\d+\.\d+$/.test(x)?'Akordi '+x:x?'beta':'–'};
 let favOnly=false,galSong=null,incoming=null,S=[],v='list',cur=null,tab='l',pk=null,t=0,fs=18,sp=3,timer=null,tbc=false,pv='',ins='g',onChord=null,closeP=null;
 try{S=JSON.parse(localStorage.getItem('chords_songs')||'[]')}catch(e){}
@@ -306,8 +307,18 @@ const stop=()=>{clearInterval(timer);timer=null};
 const sesB={},sesS={};
 const PXS=v=>2*Math.pow(40,v/100),VOF=px=>Math.max(0,Math.min(100,Math.round(100*Math.log(px/2)/Math.log(40))));
 const N=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'],FL={Db:'C#',Eb:'D#',Gb:'F#',Ab:'G#',Bb:'A#'};
-const sh0=()=>v==='ed'?0:t+(ins==='p'&&cur?cur.cp||0:0);
-const trx=c=>{const k=sh0();return k?c.replace(/[A-G][#b]?/g,m=>N[(((N.indexOf(FL[m]||m)+k)%12)+12)%12]):c};
+const NF=['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+// סקסופון הוא כלי מעביר: אלט ובריטון במי במול (הצליל הכתוב גבוה ב-9 חצאי טונים), טנור וסופרן בסי במול (טון שלם). רק בעמוד השיר, הקאפו נכלל כמו בפסנתר
+const SXT={a:9,t:2},SXN={a:'אלט',t:'טנור'};let sx='a';
+try{const x=localStorage.getItem('chords_sax');if(x==='a'||x==='t'){sx=x;ins='s'}}catch(e){}
+const noSax=()=>{try{localStorage.removeItem('chords_sax')}catch(e){}};
+const sh0=()=>v==='ed'?0:t+((ins==='p'||ins==='s')&&cur?cur.cp||0:0)+(ins==='s'?SXT[sx]:0);
+// בסקסופון כותבים בבמולים כשהסולם (לפי האקורד הראשון בשיר) הוא סולם של במולים, כמו שסקסופוניסטים רגילים לקרוא
+const flt=k=>{if(ins!=='s'||!cur)return false;
+  for(const l of cur.lines)for(const c of l.ty==='c'?l.x:Object.keys(l.c).sort((a,b)=>a-b).flatMap(i=>lc(l,i))){const m=pp(c);if(m.cust||pcOf(m.root+m.acc)<0)continue;
+    const p=((pcOf(m.root+m.acc)+k)%12+12)%12;return(/^(m(?!aj)|min|-)/.test(m.typ)?[0,2,3,5,7,10]:[1,3,5,8,10]).includes(p)}
+  return false};
+const trx=c=>{const k=sh0();if(!k)return c;const nm=flt(k)?NF:N;return c.replace(/[A-G][#b]?/g,m=>nm[(((N.indexOf(FL[m]||m)+k)%12)+12)%12])};
 // פישוט אקורדים (Simplify): רק מז'ור/מינור, dim ו-aug נשארים, בלי תוספות ובלי בס. תצוגה בלבד – השיר השמור לא משתנה
 const sesSimp={};let pdfSimp=null;
 const simpOn=()=>pdfSimp!=null?pdfSimp:(v!=='ed'&&!!cur&&!!sesSimp[cur.id]);
@@ -413,7 +424,8 @@ function usvg(f){
 const IC={
  p:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M7.2 12v7M12 12v7M16.8 12v7"/><path d="M7.2 5v7M12 5v7M16.8 5v7" stroke-width="3.2"/></svg>',
  g:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.6 9.4 20.5 3.5M19 2.5l2.5 2.5"/><circle cx="8.8" cy="15.2" r="5"/><circle cx="12.6" cy="11.4" r="3"/><circle cx="9.2" cy="14.8" r="1.2"/></svg>',
- u:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 10.5 19.5 4.5M18 3.5l2.5 2.5"/><circle cx="9" cy="15" r="4.2"/><circle cx="12" cy="12" r="2.4"/><circle cx="9.3" cy="14.7" r="1"/></svg>'};
+ u:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 10.5 19.5 4.5M18 3.5l2.5 2.5"/><circle cx="9" cy="15" r="4.2"/><circle cx="12" cy="12" r="2.4"/><circle cx="9.3" cy="14.7" r="1"/></svg>',
+ s:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 3.5 8 5.2c1.7.8 2.5 1.8 2.5 3.6v6.7a3.5 3.5 0 0 0 7 0V11.5"/><path d="M15 9h5l-.8 2.5h-3.4z"/><circle cx="10.5" cy="10.5" r=".7"/><circle cx="10.5" cy="13.5" r=".7"/></svg>'};
 const NM={p:'פסנתר',g:'גיטרה',u:'יוקללי'};
 
 function rc(l,dir,edit,li){
@@ -875,13 +887,15 @@ function view(){
     mn.hidden=!mn.hidden;
     if(!mn.hidden){watchMenu(dd,mn)}},'b ic sgi');
   mn.hidden=true;
-  ['p','g','u'].forEach(k=>{const b=el('button','mi');b.innerHTML=IC[k]+'<span>'+NM[k]+'</span>';b.setAttribute('aria-label',NM[k]);
-    b.onclick=()=>{ins=k;mn.hidden=true;ui();draw()};mn.append(b)});
+  // סקסופון רק כאן ולא בכלי המועדף בפרופיל; הבחירה נשמרת במכשיר
+  const MK=['p','g','u','sa','st'],mk=()=>ins==='s'?'s'+sx:ins,mnm=k=>k[0]==='s'?'סקסופון '+SXN[k[1]]+' / '+(k[1]==='a'?'בריטון':'סופרן'):NM[k];
+  MK.forEach(k=>{const b=el('button','mi');b.innerHTML=IC[k[0]]+'<span>'+mnm(k)+'</span>';b.setAttribute('aria-label',mnm(k));
+    b.onclick=()=>{if(k[0]==='s'){if(mk()!==k)track('sax');ins='s';sx=k[1];try{localStorage.setItem('chords_sax',sx)}catch(e){}}else{ins=k;noSax()}if(closeP)closeP(false);mn.hidden=true;ui();draw()};mn.append(b)});
   dd.append(ibn,mn);
-  const ui=()=>{ibn.innerHTML=IC[ins];ibn.setAttribute('aria-label','כלי נגינה: '+NM[ins]);
-    [...mn.children].forEach((b,n)=>b.classList.toggle('on',['p','g','u'][n]===ins));
-    cpt.textContent=s.cp>0?'קאפו '+s.cp+(ins==='p'?' כלול באקורדים':''):'';
-    sar.hidden=!s.artist&&!(s.cp>0)&&!s.bpm};
+  const ui=()=>{ibn.innerHTML=IC[ins];ibn.setAttribute('aria-label','כלי נגינה: '+mnm(mk()));
+    [...mn.children].forEach((b,n)=>b.classList.toggle('on',MK[n]===mk()));
+    cpt.textContent=ins==='s'?'אקורדים לסקסופון '+SXN[sx]+(s.cp>0?' · קאפו '+s.cp+' כלול':''):s.cp>0?'קאפו '+s.cp+(ins==='p'?' כלול באקורדים':''):'';
+    sar.hidden=!s.artist&&!cpt.textContent&&!s.bpm};
   const tv=el('button','val'),sh=()=>{tv.textContent='';tv.append(el('small','','טון'),el('b','',t>0?'+'+t:t<0?'\u2212'+(-t):'0'))};
   const tc=n=>{if(n!==t&&n)track('tr');t=n;s.tp=t||undefined;if(!inc)s.upd=Date.now();sh();draw();sv()};
   tv.onclick=()=>tc(0);tv.setAttribute('aria-label','איפוס טון');sh();
@@ -906,10 +920,11 @@ function view(){
     if(!iv)pop.append(el('div','pn','אין תרשים לאקורד הזה'));
     else{
       const pc=pcOf(m.root+m.acc),bs=m.bass?pcOf(m.bass):null,box=el('div','pg');
-      if(ins==='p')box.innerHTML=psvg(pc,iv,bs);
+      if(ins==='s'){const nm=/^[A-G]b/.test(name)||flt(sh0())?NF:N;pop.append(el('div','sxn',[...new Set(iv.map(i=>nm[(pc+i)%12]))].join('  ')),el('div','pn','הצלילים לסקסופון '+SXN[sx]+(m.bass?' · בס: '+nm[bs]:'')))}
+      else{if(ins==='p')box.innerHTML=psvg(pc,iv,bs);
       else if(ins==='u'){const f=us(pc,iv);if(f)box.innerHTML=usvg(f);else box.textContent='אין תרשים לאקורד הזה'}
       else{const g=gs(pc,ty);if(g)box.innerHTML=gsvg(g);else box.textContent='אין תרשים לאקורד הזה'}
-      pop.append(box,el('div','pn','תווים: '+[...new Set(iv.map(i=>N[(pc+i)%12]))].join(' ')+(m.bass?' · בס: '+N[bs]:'')));
+      pop.append(box,el('div','pn','תווים: '+[...new Set(iv.map(i=>N[(pc+i)%12]))].join(' ')+(m.bass?' · בס: '+N[bs]:'')))}
     }
     document.body.append(pop);
     if(timer){stop();paused=true;upd()}
@@ -1186,7 +1201,7 @@ function mergeRemote(o){
   const n=S.length;S=S.filter(x=>!(DEL[x.id]!=null&&DEL[x.id]>=(x.upd||0)));if(S.length!==n)ch=true;
   if(o&&o.acct&&acct&&o.acct.dname&&(o.acct.upd||1)>(acct.upd||0)){acct.dname=o.acct.dname;acct.news=!!o.acct.news;acct.upd=o.acct.upd||1;saveAcct();ch=true}
   if(o&&o.folders&&Array.isArray(o.folders.list)&&(o.folders.upd||0)>fupd){FOL=o.folders.list.filter(f=>f&&f.id!=null&&typeof f.name==='string');fupd=o.folders.upd;saveFol();ch=true}
-  if(o&&o.prefs&&(o.prefs.upd||0)>pupd){if(['p','g','u'].includes(o.prefs.ins)){prefIns=o.prefs.ins;ins=prefIns}pupd=o.prefs.upd;savePrefs();ch=true}
+  if(o&&o.prefs&&(o.prefs.upd||0)>pupd){if(['p','g','u'].includes(o.prefs.ins)){prefIns=o.prefs.ins;if(ins!=='s')ins=prefIns}pupd=o.prefs.upd;savePrefs();ch=true}
   return ch;
 }
 // לא מציירים מחדש מתחת לידיים של המשתמש: חלון פתוח (למשל הדבקת שיר), הקלדה, או הודעה שנכתבה ב"צור קשר"
@@ -1269,14 +1284,14 @@ function onboard(){
     const n=nm.value.trim().slice(0,40);
     if(acct){acct.dname=n||acct.dname||acct.given||'';acct.news=!!(cb&&cb.checked);acct.upd=Date.now();saveAcct()}
     else{gname=n;try{localStorage.setItem('chords_name',gname)}catch(e){}}
-    ins=sel;setPrefs({ins:sel});finishWel()},'b pr wide'));
+    ins=sel;noSax();setPrefs({ins:sel});finishWel()},'b pr wide'));
   A.append(w);
 }
 function prefsSection(){
   const s=el('div','sec');s.append(el('h2','sh','העדפות'));
   const nm=el('input','f');nm.maxLength=40;nm.value=myName();nm.setAttribute('aria-label','שם תצוגה');
   nm.onchange=()=>{const n=nm.value.trim().slice(0,40);if(acct){acct.dname=n||acct.dname;acct.upd=Date.now();saveAcct();markDirty()}else{gname=n;try{localStorage.setItem('chords_name',gname)}catch(e){}}};
-  s.append(el('label','lbl','שם תצוגה'),nm,el('div','lbl','כלי נגינה מועדף'),insPicker(prefIns,k=>{ins=k;setPrefs({ins:k})}));
+  s.append(el('label','lbl','שם תצוגה'),nm,el('div','lbl','כלי נגינה מועדף'),insPicker(prefIns,k=>{ins=k;noSax();setPrefs({ins:k})}));
   // תצוגה: בהיר / כהה / לפי הטלפון – נשמר רק במכשיר הזה
   const cur0=(()=>{try{return localStorage.getItem('chords_theme')||'auto'}catch(e){return'auto'}})(),tg=el('div','seg thm');
   [['light','בהיר'],['dark','כהה'],['auto','לפי הטלפון']].forEach(([k,x])=>{const b=el('button',k===cur0?'on':'',x);b.setAttribute('aria-pressed',k===cur0?'true':'false');
@@ -1496,7 +1511,7 @@ async function adm(path,body){if(!tokOk())throw new Error('auth');
 function devNeedTok(){const c=el('div','dvc dve');c.append(el('p','','כדי לקרוא נתונים מהשרת צריך התחברות פעילה לגוגל.'),btn('התחבר',()=>{signIn(false);afterTok=()=>{syncNow();if(v==='dev')render()}},'b pr'));A.append(c)}
 function devErr(e,retry){const c=el('div','dvc dve');c.append(el('p','',e&&e.message==='forbidden'?'השרת לא זיהה את החשבון כבעל האפליקציה. בדוק את הסוד OWNER_EMAIL ב-Cloudflare.':'לא הצלחתי לקרוא מהשרת. בדוק את החיבור לאינטרנט.'));if(e&&(e.info||e.message!=='forbidden')){const dt=el('code','',e.info||String(e.message||e));dt.dir='ltr';c.append(dt)}c.append(btn('נסה שוב',retry,'b'));A.append(c)}
 let devSt=null,devFbL=null;
-const FEAT={newaddr:'פתיחה בכתובת החדשה',moved:'העברת שירים מהכתובת הישנה',help:'מדריך מהיר',imp_nagnu:'ייבוא מנגנו',imp_ug:'ייבוא מ-UG',imp_negina:'ייבוא מנגינה',imp_cifra:'ייבוא מ-Cifra Club',imp_auto:'ייבוא מטקסט אחר',imp_file:'ייבוא מקובץ',link_add:'הוספת שיר מקישור',new:'שיר חדש',share:'שיתוף שיר',share_fold:'שליחת תיקייה',pdf:'PDF של שיר',pdf_book:'שירון PDF',tr:'טרנספוזיציה',simp:'פישוט אקורדים',scroll:'גלילה אוטומטית',metro:'מטרונום',cam:'מצלמה'};
+const FEAT={newaddr:'פתיחה בכתובת החדשה',moved:'העברת שירים מהכתובת הישנה',help:'מדריך מהיר',imp_nagnu:'ייבוא מנגנו',imp_ug:'ייבוא מ-UG',imp_negina:'ייבוא מנגינה',imp_cifra:'ייבוא מ-Cifra Club',imp_auto:'ייבוא מטקסט אחר',imp_file:'ייבוא מקובץ',link_add:'הוספת שיר מקישור',new:'שיר חדש',share:'שיתוף שיר',share_fold:'שליחת תיקייה',pdf:'PDF של שיר',pdf_book:'שירון PDF',tr:'טרנספוזיציה',simp:'פישוט אקורדים',sax:'סקסופון',scroll:'גלילה אוטומטית',metro:'מטרונום',cam:'מצלמה'};
 const BNN={inst:'באנר התקנה',login:'באנר התחברות',help:'באנר מדריך',upd:'באנר גרסה חדשה'},INSN={p:'פסנתר',g:'גיטרה',u:'יוקלילי'};
 let regN=null;try{regN=new Intl.DisplayNames(['he'],{type:'region'})}catch(e){}
 const pct=(a,b)=>b?Math.round(100*a/b)+'%':'–';
@@ -1840,7 +1855,7 @@ function settings(){
     const r=mergeSongs(sel,{force,keep:true});
     // תיקייה נוספת רק אם לפחות שיר אחד שנבחר שייך אליה
     let add=0;fl.forEach(x=>{if(!FOL.some(y=>y.id===x.id)&&sel.some(z=>(z.fo||[]).includes(x.id))){FOL.push({id:x.id,name:x.name.slice(0,40)});add++}});if(add)folChanged();
-    if(i2==='p'||i2==='g'||i2==='u'){ins=i2;setPrefs({ins:i2})}
+    if(i2==='p'||i2==='g'||i2==='u'){ins=i2;noSax();setPrefs({ins:i2})}
     msg.textContent='הייבוא הסתיים: '+r.a+' שירים נוספו, '+r.u+' עודכנו'+(r.k?', '+r.k+' נשארו כמו שהם':'')+(bad?', '+bad+' לא נקראו':'')+'.'};
   const bb=btn('גבה את כל השירים',async()=>{
     if(!S.length){msg.textContent='אין עדיין שירים לגבות.';return}
