@@ -224,7 +224,7 @@ input[type=search]::-webkit-search-cancel-button,input[type=search]::-webkit-sea
 .fabd{position:fixed;left:16px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:8}.fabd .fab{position:static}.fabd .mn{bottom:calc(100% + 8px)}
 .f.bad{border-color:#dc2626;box-shadow:0 0 0 1px #dc2626}
 .row.tar{align-items:stretch}.flw{position:relative;flex:1;min-width:0;transition:flex-grow .15s}.flw:first-child{flex:1.4}.flw:focus-within{flex:2.6}
-.flw .f{padding:20px 10px 6px}.fll{position:absolute;top:13px;inset-inline-start:11px;font-size:.68rem;color:var(--mut);pointer-events:none}
+.flw .f{padding:20px 10px 6px}.flw .f::placeholder{color:transparent}.fll{position:absolute;top:13px;inset-inline-start:11px;font-size:.68rem;color:var(--mut);pointer-events:none}
 .row.ctl .dtb{padding-inline:9px}
 .lnkb{background:none;border:0;padding:0;color:var(--ch);text-decoration:underline;cursor:pointer;font-size:inherit}
 .psd{display:flex;flex-direction:column;gap:8px;max-height:calc(100dvh - 32px)}.psd h3{margin:0}.psd .f{margin:0}.psd .dlgb{margin-top:4px}.psd textarea{flex:1;min-height:min(46vh,420px);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem;white-space:pre;overflow-x:auto}.psd textarea::placeholder{white-space:pre-line;font-family:system-ui,'Segoe UI',Arial,sans-serif}.psd textarea:placeholder-shown{direction:rtl}.phint{margin:0;color:var(--mut);font-size:.82rem;line-height:1.35}.perr{color:#dc2626;margin:0;font-size:.9rem}
@@ -291,7 +291,7 @@ const BETA=!!window.BETA,LOGO=BETA?'icon-beta.svg':'icon.svg';
 const MVTEST=location.hostname==='localhost'&&/[?&]mvtest\b/.test(location.search),NEWURL=MVTEST?'http://localhost:8767/':'https://akordi.jacob-apps.co.il/',OLDHOST=location.hostname==='kobi2132.github.io'||MVTEST,mvIn=/^#m=[zp]/.test(location.hash);
 // קישור לשיר ששותף מהכתובת הישנה – ממשיכים איתו לכתובת החדשה, כדי שהשיר לא ילך לאיבוד במסך המעבר
 if(OLDHOST&&/^#s=[zp]/.test(location.hash))location.replace(NEWURL+location.hash);
-const APPV='0.80b33';
+const APPV='0.80b34';
 const verName=x=>{x=x||'';let m=x.match(/^(\d+\.\d+)b(\d+)$/);if(m)return 'Akordi '+m[1]+' beta '+m[2];return /^\d+\.\d+$/.test(x)?'Akordi '+x:x?'beta':'–'};
 let favOnly=false,galSong=null,incoming=null,linkChk=false,S=[],v='list',cur=null,tab='l',pk=null,t=0,fs=18,sp=3,timer=null,tbc=false,pv='',ins='g',onChord=null,closeP=null;
 try{S=JSON.parse(localStorage.getItem('chords_songs')||'[]')}catch(e){}
@@ -653,10 +653,11 @@ function dlg(o){return new Promise(res=>{
   const done=v2=>{w.remove();document.removeEventListener('keydown',kd,true);dlgClose=null;res(v2)};
   const ok=()=>{if(inp&&!o.ro){const x=inp.value.trim();if(!x){inp.focus();return}done(x)}else done(o.check?{checked:!!(cb&&cb.checked)}:true)};
   const kd=e=>{if(e.key==='Escape'){e.preventDefault();done(null)}else if(e.key==='Enter'){e.preventDefault();ok()}};
-  const okb=o.icons?ibt('ok',ok,'b ic '+(o.danger?'danger':'pr'),o.ok||'אישור'):btn(o.ok||'אישור',ok,'b '+(o.danger?'danger':'pr'));
+  const okc=o.danger?'danger':o.okPlain?'':'pr',okb=o.icons?ibt('ok',ok,'b ic '+okc,o.ok||'אישור'):btn(o.ok||'אישור',ok,'b '+okc);
   if(o.check){const lb=el('label','chk');cb=el('input');cb.type='checkbox';cb.checked=!!o.check.on;lb.append(cb,el('span','',o.check.label));d.append(lb);
-    if(o.check.ok)cb.onchange=()=>{okb.textContent=cb.checked?o.check.ok:(o.ok||'אישור');okb.className='b '+(cb.checked||o.danger?'danger':'pr')}}
-  const b=el('div','dlgb');if(o.alt)b.append(btn(o.alt,()=>done(o.check?{alt:true,checked:!!(cb&&cb.checked)}:'alt'),'b pr'));b.append(okb);if(!o.noCancel)b.append(o.icons?ibt('close',()=>done(null),'b ic',o.cancel||'ביטול'):btn(o.cancel||'ביטול',()=>done(null),'b'));
+    if(o.check.ok)cb.onchange=()=>{okb.textContent=cb.checked?o.check.ok:(o.ok||'אישור');okb.className='b '+(cb.checked?'danger':okc)}}
+  const b=el('div','dlgb');// כפתור ראשי אחד בחלון: altPlain / okPlain – הבחירה השנייה בכפתור לבן
+  if(o.alt)b.append(btn(o.alt,()=>done(o.check?{alt:true,checked:!!(cb&&cb.checked)}:'alt'),'b'+(o.altPlain?'':' pr')));b.append(okb);if(!o.noCancel)b.append(o.icons?ibt('close',()=>done(null),'b ic',o.cancel||'ביטול'):btn(o.cancel||'ביטול',()=>done(null),'b'));
   d.append(b);w.append(d);w.onclick=e=>{if(e.target===w)done(null)};document.body.append(w);
   document.addEventListener('keydown',kd,true);dlgClose=done;
   setTimeout(()=>{if(inp){inp.focus();inp.select()}else b.firstChild.focus()},30);
@@ -1284,7 +1285,7 @@ function addIncoming(s){
   const open=(x,m)=>{incoming=null;cur=x;t=x.tp||0;v='vw';if(m)toast(m);render()};
   if(!ex){s.upd=s.upd||Date.now();mergeSongs([s],{keep:true});open(S.find(x=>x.id===s.id)||s,'השיר נוסף לשירים שלך');return}
   if(same(ex)){open(ex,'השיר הזה כבר נמצא בשירים שלך');return}
-  dlg({title:'השיר כבר נמצא אצלך',text:'יש לך גרסה אחרת של "'+ex.title+'". מה לעשות עם הגרסה ששותפה איתך?',alt:'החלף את הגרסה שלי',ok:'שמור כשיר נוסף',cancel:'ביטול'}).then(r=>{
+  dlg({title:'השיר כבר נמצא אצלך',text:'יש לך גרסה אחרת של "'+ex.title+'". מה לעשות עם הגרסה ששותפה איתך?',alt:'החלף את הגרסה שלי',altPlain:true,ok:'שמור כשיר נוסף',cancel:'ביטול'}).then(r=>{
     if(!r)return;
     if(r==='alt'){const i=S.indexOf(ex),x=Object.assign(JSON.parse(JSON.stringify(s)),{upd:Date.now()});['fo','fav','tp','mu','ad'].forEach(k=>{if(ex[k]!=null)x[k]=ex[k]});putSong(i,x);sv();open(ex,'הגרסה ששותפה נשמרה במקום שלך');return}
     const c=dupSong(s,true);open(c)})}
@@ -1853,7 +1854,7 @@ function songPdfFlow(s,tn){
   if(!sh){if(!sp0){songPdf2(false,false);return}
     dlg({title:'הורדת PDF',check:ck,ok:'הורד',cancel:'ביטול'}).then(r=>{if(r)songPdf2(false,r.checked)});return}
   const lbl=T?'הטון שלי ('+(T>0?'+':'−')+Math.abs(T)+')':'כמו במסך (קאפו כלול)';
-  dlg({title:'איזה טון להוריד?',text:'אפשר להוריד את השיר כמו שהוא מוצג אצלך, או עם האקורדים המקוריים.',alt:lbl,ok:'טון מקורי',cancel:'ביטול',check:ck}).then(r=>{
+  dlg({title:'איזה טון להוריד?',text:'אפשר להוריד את השיר כמו שהוא מוצג אצלך, או עם האקורדים המקוריים.',alt:lbl,ok:'טון מקורי',okPlain:true,cancel:'ביטול',check:ck}).then(r=>{
     if(!r)return;const c=ck?!!r.checked:false;if(r==='alt'||r.alt)songPdf2(true,c);else songPdf2(false,c)});
 }
 // שיתוף קישור לשיר (מעמוד השיר ומתפריט השיר ברשימה)
@@ -1872,7 +1873,7 @@ function bookPdfFlow(f){
   const sp0=songs.some(s=>sesSimp[s.id]),ck=sp0?{label:'אקורדים מפושטים (בשירים שבהם הפישוט פעיל)',on:true}:null;
   if(!songs.some(s=>s.tp||(ins==='p'&&s.cp>0))){if(!sp0){bookPdf(f,songs,false,false);return}
     dlg({title:'הורדת שירון PDF',check:ck,ok:'הורד',cancel:'ביטול'}).then(r=>{if(r)bookPdf(f,songs,false,r.checked)});return}
-  dlg({title:'איזה טונים להוריד?',text:'בחלק מהשירים שמרת טון אחר. אפשר להוריד את השירון עם הטונים שלך או עם האקורדים המקוריים.',alt:'הטונים שלי',ok:'טונים מקוריים',cancel:'ביטול',check:ck}).then(r=>{
+  dlg({title:'איזה טונים להוריד?',text:'בחלק מהשירים שמרת טון אחר. אפשר להוריד את השירון עם הטונים שלך או עם האקורדים המקוריים.',alt:'הטונים שלי',ok:'טונים מקוריים',okPlain:true,cancel:'ביטול',check:ck}).then(r=>{
     if(!r)return;const c=ck?!!r.checked:false;if(r==='alt'||r.alt)bookPdf(f,songs,true,c);else bookPdf(f,songs,false,c)});
 }
 
@@ -2257,7 +2258,8 @@ function pasteSong(fid){
     v='ed';tab='c';pk=null;render();edSnap='imported';saveDraft();
     toast('השיר יובא. בדוק ושמור',3000)};
   const b=el('div','dlgb');b.append(btn('ייבא',go,'b pr'),btn('ביטול',done,'b'));
-  d.append(ti,ar,st,el('p','phint','אקורדי תמקם את האקורדים כמה שיותר מדויק. אם משהו לא במקום, אפשר לתקן בעריכה אחרי הייבוא.'),ta,er,b);w.append(d);w.onclick=e=>{if(e.target===w)done()};document.body.append(w);
+  const tr0=el('div','row tar'),fl=(i,lb)=>{const w=el('label','flw');w.append(i,el('span','fll',lb));return w};tr0.append(fl(ti,'שם השיר'),fl(ar,'אמן'));
+  d.append(tr0,st,el('p','phint','אקורדי תמקם את האקורדים כמה שיותר מדויק. אם משהו לא במקום, אפשר לתקן בעריכה אחרי הייבוא.'),ta,er,b);w.append(d);w.onclick=e=>{if(e.target===w)done()};document.body.append(w);
   document.addEventListener('keydown',kd,true);dlgClose=()=>done();setTimeout(()=>ti.focus(),30);
 }
 
