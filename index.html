@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>אקורדי</title>
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="manifest" href="manifest.webmanifest">
@@ -294,7 +294,7 @@ const BETA=!!window.BETA,LOGO=BETA?'icon-beta.svg':'icon.svg';
 const MVTEST=location.hostname==='localhost'&&/[?&]mvtest\b/.test(location.search),NEWURL=MVTEST?'http://localhost:8767/':'https://akordi.jacob-apps.co.il/',OLDHOST=location.hostname==='kobi2132.github.io'||MVTEST,mvIn=/^#m=[zp]/.test(location.hash);
 // קישור לשיר ששותף מהכתובת הישנה – ממשיכים איתו לכתובת החדשה, כדי שהשיר לא ילך לאיבוד במסך המעבר
 if(OLDHOST&&/^#s=[zp]/.test(location.hash))location.replace(NEWURL+location.hash);
-const APPV='0.81b33';
+const APPV='0.81b34';
 const verName=x=>{x=x||'';let m=x.match(/^(\d+\.\d+)b(\d+)$/);if(m)return 'Akordi '+m[1]+' beta '+m[2];return /^\d+\.\d+$/.test(x)?'Akordi '+x:x?'beta':'–'};
 let favOnly=false,galSong=null,incoming=null,linkChk=false,S=[],v='list',cur=null,tab='l',pk=null,t=0,fs=18,sp=3,timer=null,tbc=false,pv='',ins='g',onChord=null,closeP=null;
 try{S=JSON.parse(localStorage.getItem('chords_songs')||'[]')}catch(e){}
@@ -2072,16 +2072,8 @@ document.addEventListener('click',e=>{
   if(v!=='ed'||tab!=='c'||!pk)return;
   if(!e.target.closest('.cb,.cl,.cd,.cc,.gap,.b')){pk=null;render()}
 });
-let pinch=null,wt=0;
-const zoomTo=(nf,done)=>{if(v!=='vw')return;fs=Math.min(60,Math.max(12,nf));const bd=A.querySelector('.bd');if(bd){bd.style.fontSize=fs+'px';if(done){fix(bd);A._syncSp&&A._syncSp()}}};
-const tdist=e=>Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-document.addEventListener('touchstart',e=>{if(v==='vw'&&e.touches.length===2){pinch={d:tdist(e)||1,f:fs};if(closeP)closeP(true)}},{passive:true});
-document.addEventListener('touchmove',e=>{if(pinch&&e.touches.length===2){e.preventDefault();zoomTo(pinch.f*tdist(e)/pinch.d)}},{passive:false});
-document.addEventListener('touchend',e=>{if(pinch&&e.touches.length<2){pinch=null;zoomTo(fs,true)}});
-document.addEventListener('touchcancel',()=>{if(pinch){pinch=null;zoomTo(fs,true)}});
-document.addEventListener('gesturestart',e=>{if(v==='vw')e.preventDefault()});
-document.addEventListener('gesturechange',e=>{if(v==='vw')e.preventDefault()});
-document.addEventListener('wheel',e=>{if(v==='vw'&&e.ctrlKey){e.preventDefault();zoomTo(fs*Math.exp(-e.deltaY*.01));clearTimeout(wt);wt=setTimeout(()=>zoomTo(fs,true),150)}},{passive:false});
+// אין זום בצביטה: לא בדף כולו ולא בגודל הטקסט (משנים גודל רק בכפתורי A). ספארי מתעלם מ-user-scalable, לכן חוסמים גם כאן
+document.addEventListener('gesturestart',e=>e.preventDefault());document.addEventListener('gesturechange',e=>e.preventDefault());
 /* phone back button */
 let armed=false,ignorePop=false,edSnap=null,edObj=null;
 const edState=()=>{const c=cur;return JSON.stringify({a:[c.title,c.artist,c.link,c.cp,c.bpm,c.priv,c.dir,c.note,c.fo],t:c.raw!=null?c.raw:c.lines.filter(l=>l.ty!=='c').map(l=>l.t).join('\n'),c:c.lines.map(l=>l.ty==='c'?[l.x,l.lab]:l.c)})};
