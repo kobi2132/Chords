@@ -291,7 +291,7 @@ const BETA=!!window.BETA,LOGO=BETA?'icon-beta.svg':'icon.svg';
 const MVTEST=location.hostname==='localhost'&&/[?&]mvtest\b/.test(location.search),NEWURL=MVTEST?'http://localhost:8767/':'https://akordi.jacob-apps.co.il/',OLDHOST=location.hostname==='kobi2132.github.io'||MVTEST,mvIn=/^#m=[zp]/.test(location.hash);
 // קישור לשיר ששותף מהכתובת הישנה – ממשיכים איתו לכתובת החדשה, כדי שהשיר לא ילך לאיבוד במסך המעבר
 if(OLDHOST&&/^#s=[zp]/.test(location.hash))location.replace(NEWURL+location.hash);
-const APPV='0.80b32';
+const APPV='0.80b33';
 const verName=x=>{x=x||'';let m=x.match(/^(\d+\.\d+)b(\d+)$/);if(m)return 'Akordi '+m[1]+' beta '+m[2];return /^\d+\.\d+$/.test(x)?'Akordi '+x:x?'beta':'–'};
 let favOnly=false,galSong=null,incoming=null,linkChk=false,S=[],v='list',cur=null,tab='l',pk=null,t=0,fs=18,sp=3,timer=null,tbc=false,pv='',ins='g',onChord=null,closeP=null;
 try{S=JSON.parse(localStorage.getItem('chords_songs')||'[]')}catch(e){}
@@ -1997,7 +1997,7 @@ function edit(){
     btn('שמור',saveEdit,'b pr'));
   A.append(top);
   const inp=(k,ph)=>{const i=el('input','f');i.dataset.k=k;i.placeholder=ph;i.setAttribute('aria-label',ph);i.value=s[k]||'';i.oninput=()=>{s[k]=i.value;if(i.value.trim()){i.classList.remove('bad');i.removeAttribute('aria-invalid')}if(k==='title')top.querySelector('.tt').textContent=i.value||'שיר חדש'};return i};
-  const dt=btn(s.dir==='rtl'?'עברית':'אנגלית',()=>{s.dir=s.dir==='rtl'?'ltr':'rtl';s.dset=true;render()},'b dtb','כיוון כתיבה: '+(s.dir==='rtl'?'עברית':'אנגלית')+' (לחץ להחלפה)');
+  const dt=btn(s.dir==='rtl'?'עב':'EN',()=>{s.dir=s.dir==='rtl'?'ltr':'rtl';s.dset=true;render()},'b dtb','כיוון כתיבה: '+(s.dir==='rtl'?'עברית':'אנגלית')+' (לחץ להחלפה)');
   // כותרת קטנה בתוך השדה; השדה שכותבים בו מתרחב, כדי ששם ארוך ייכנס
   const flw=(i,lb)=>{const w=el('label','flw');w.append(i,el('span','fll',lb));return w};
   const row=el('div','row tar');row.append(flw(inp('title','שם השיר'),'שם השיר'),flw(inp('artist','אמן'),'אמן'));
@@ -2028,7 +2028,7 @@ function edit(){
   if(tab==='l'){
     if(s.raw==null)s.raw=s.lines.filter(l=>l.ty!=='c').map(l=>l.t).join('\n');
     const ta=el('textarea','f');ta.value=s.raw;ta.placeholder='הדבק כאן את מילות השיר';ta.dir=s.dir;
-    ta.oninput=()=>{s.raw=ta.value;if(!s.dset){s.dir=detect(ta.value);ta.dir=s.dir;const n=s.dir==='rtl'?'עברית':'אנגלית';dt.textContent=n;dt.setAttribute('aria-label','כיוון כתיבה: '+n+' (לחץ להחלפה)')}};
+    ta.oninput=()=>{s.raw=ta.value;if(!s.dset){s.dir=detect(ta.value);ta.dir=s.dir;dt.textContent=s.dir==='rtl'?'עב':'EN';dt.setAttribute('aria-label','כיוון כתיבה: '+(s.dir==='rtl'?'עברית':'אנגלית')+' (לחץ להחלפה)')}};
     A.append(ta);
   }else{
     {const h=el('div','hint','לחץ על אות כדי להוסיף מעליה אקורד. '),mo=el('button','lnkb','עוד הסברים');
