@@ -1,9 +1,9 @@
 // אקורדי – שומר את קבצי האפליקציה בטלפון כדי שתעבוד גם בלי אינטרנט.
 // VER – מספר הגרסה שמוצג (Akordi 0.N). V – קוד לפי תוכן הקבצים. שניהם מתעדכנים אוטומטית בכל עדכון (git pre-commit), וכך הטלפון יודע שיש גרסה חדשה.
-const VER='0.79';
-const V='3b6c301a8c';
+const VER='0.80';
+const V='87e06bf3ed';
 // QUIET=1: שחרור שקט – הטלפונים מתעדכנים בפתיחה הבאה בלי פס "יש גרסה חדשה". אחרי שחרור כזה מחזירים ל-0 ב-dev
-const QUIET=1;
+const QUIET=0;
 const C='akordi-'+VER+'_'+V;
 const ASSETS=['./','index.html','icon.svg','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png','manifest-beta.webmanifest','icon-beta.svg','icons/icon-beta-192.png','icons/icon-beta-512.png','icons/icon-beta-maskable-512.png','icons/apple-touch-icon-beta.png','fonts/Alef-Regular.ttf','fonts/Alef-Bold.ttf','fonts/OpenSans500-he.woff','vendor/jspdf.umd.min.js','whatsnew.json','help.json','privacy.html','terms.html','legal.css'];
 self.addEventListener('install',e=>{
